@@ -1,28 +1,21 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Map, Plus, ClipboardCheck, Settings } from 'lucide-react';
-import { useAuth } from '@/lib/auth-context';
+import { LayoutDashboard, Map, Plus, Settings } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Home' },
   { to: '/trips', icon: Map, label: 'Trips' },
   { to: '/add-expense', icon: Plus, label: 'Add', highlight: true },
-  { to: '/approvals', icon: ClipboardCheck, label: 'Approve', roles: ['admin', 'manager'] as string[] },
   { to: '/settings', icon: Settings, label: 'More' },
 ];
 
 export default function BottomNav() {
-  const { user } = useAuth();
   const location = useLocation();
 
-  const filtered = navItems.filter(item => {
-    if (!item.roles) return true;
-    return user && item.roles.includes(user.role);
-  });
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md safe-area-bottom">
       <div className="flex items-center justify-around px-2 py-1">
-        {filtered.map(item => {
+        {navItems.map(item => {
           const isActive = location.pathname === item.to;
           return (
             <NavLink

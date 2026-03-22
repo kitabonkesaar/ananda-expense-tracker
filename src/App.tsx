@@ -10,7 +10,6 @@ import DashboardPage from "@/pages/DashboardPage";
 import TripsPage from "@/pages/TripsPage";
 import TripDetailPage from "@/pages/TripDetailPage";
 import AddExpensePage from "@/pages/AddExpensePage";
-import ApprovalsPage from "@/pages/ApprovalsPage";
 import ReportsPage from "@/pages/ReportsPage";
 import AlertsPage from "@/pages/AlertsPage";
 import TeamPage from "@/pages/TeamPage";
@@ -41,7 +40,7 @@ function AppRoutes() {
           <Route path="/trips" element={<TripsPage />} />
           <Route path="/trips/:tripId" element={<TripDetailPage />} />
           <Route path="/add-expense" element={<AddExpensePage />} />
-          <Route path="/approvals" element={<ApprovalsPage />} />
+          
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/team" element={<TeamPage />} />
