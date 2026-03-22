@@ -1,4 +1,4 @@
-import { User, Trip, Expense, Alert, DisciplineScore } from './types';
+import { User, Trip, Expense, Alert, DisciplineScore, AuditLog } from './types';
 
 export const demoUsers: User[] = [
   { id: 'u1', name: 'Rajesh Kumar', phone: '+91 98765 43210', role: 'admin', isActive: true, createdAt: '2024-01-01' },
