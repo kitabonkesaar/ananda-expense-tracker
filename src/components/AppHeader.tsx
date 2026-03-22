@@ -1,5 +1,5 @@
 import { useAuth } from '@/lib/auth-context';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { UserRole } from '@/lib/types';
 
 export default function AppHeader() {
@@ -8,7 +8,6 @@ export default function AppHeader() {
 
   const roleBadgeColor: Record<UserRole, string> = {
     admin: 'bg-primary text-primary-foreground',
-    manager: 'bg-accent text-accent-foreground',
     staff: 'bg-secondary text-secondary-foreground',
   };
 
@@ -35,7 +34,6 @@ export default function AppHeader() {
             className="text-xs bg-secondary text-secondary-foreground rounded-md px-2 py-1 border-none outline-none cursor-pointer"
           >
             <option value="admin">Admin</option>
-            <option value="manager">Manager</option>
             <option value="staff">Staff</option>
           </select>
           <button onClick={logout} className="p-2 rounded-lg hover:bg-secondary active:scale-95 transition-all">

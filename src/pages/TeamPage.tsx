@@ -1,17 +1,14 @@
 import { demoUsers, demoDiscipline } from '@/lib/demo-data';
 import { useAuth } from '@/lib/auth-context';
-import { Users, Phone, Shield, UserCheck, UserX } from 'lucide-react';
+import { Users, Phone, UserCheck, UserX } from 'lucide-react';
 import { UserRole } from '@/lib/types';
 
 const roleBadge: Record<UserRole, string> = {
   admin: 'bg-primary/10 text-primary',
-  manager: 'bg-accent/10 text-accent',
   staff: 'bg-secondary text-secondary-foreground',
 };
 
 export default function TeamPage() {
-  const { user } = useAuth();
-
   return (
     <div className="pb-24 px-4 pt-4">
       <div className="flex items-center justify-between mb-5 animate-fade-up">
@@ -22,7 +19,6 @@ export default function TeamPage() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-5 animate-fade-up stagger-1">
         {[
           { label: 'Active', value: demoUsers.filter(u => u.isActive).length, icon: UserCheck, color: 'text-success' },
@@ -37,7 +33,6 @@ export default function TeamPage() {
         ))}
       </div>
 
-      {/* Members List */}
       <div className="space-y-2 animate-fade-up stagger-2">
         {demoUsers.map(member => {
           const discipline = demoDiscipline.find(d => d.userId === member.id);
@@ -65,7 +60,7 @@ export default function TeamPage() {
                 </div>
               </div>
               {discipline && (
-                <div className={`text-right shrink-0`}>
+                <div className="text-right shrink-0">
                   <p className={`text-sm font-bold tabular-nums ${discipline.score >= 20 ? 'text-success' : discipline.score >= 0 ? 'text-warning' : 'text-destructive'}`}>
                     {discipline.score}
                   </p>

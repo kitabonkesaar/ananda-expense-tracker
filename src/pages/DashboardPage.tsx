@@ -76,7 +76,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Alerts */}
-      {(user?.role === 'admin' || user?.role === 'manager') && demoAlerts.length > 0 && (
+      {user?.role === 'admin' && demoAlerts.length > 0 && (
         <div className="mb-5 animate-fade-up stagger-3">
           <h3 className="text-sm font-semibold text-foreground mb-3">Alerts</h3>
           <div className="space-y-2">

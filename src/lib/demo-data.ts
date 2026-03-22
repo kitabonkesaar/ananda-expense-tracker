@@ -2,7 +2,7 @@ import { User, Trip, Expense, Alert, DisciplineScore, AuditLog } from './types';
 
 export const demoUsers: User[] = [
   { id: 'u1', name: 'Rajesh Kumar', phone: '+91 98765 43210', role: 'admin', isActive: true, createdAt: '2024-01-01' },
-  { id: 'u2', name: 'Priya Sharma', phone: '+91 87654 32109', role: 'manager', isActive: true, createdAt: '2024-01-05' },
+  { id: 'u2', name: 'Priya Sharma', phone: '+91 87654 32109', role: 'admin', isActive: true, createdAt: '2024-01-05' },
   { id: 'u3', name: 'Amit Patel', phone: '+91 76543 21098', role: 'staff', isActive: true, createdAt: '2024-02-10' },
   { id: 'u4', name: 'Sunita Devi', phone: '+91 65432 10987', role: 'staff', isActive: true, createdAt: '2024-02-15' },
   { id: 'u5', name: 'Vikram Singh', phone: '+91 54321 09876', role: 'staff', isActive: true, createdAt: '2024-03-01' },
