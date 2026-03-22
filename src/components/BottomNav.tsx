@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Map, Plus, ClipboardCheck, Settings } from 'lucide-react';
+import { LayoutDashboard, Map, Plus, Settings } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
 const navItems = [
