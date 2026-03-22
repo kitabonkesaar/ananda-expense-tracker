@@ -15,7 +15,10 @@ export default function SettingsPage() {
 
   if (!user) return null;
 
-  const menuGroups = [
+  type MenuItem = { icon: typeof Users; label: string; to?: string; roles?: string[]; action?: () => void };
+  type MenuGroup = { label: string; items: MenuItem[] };
+
+  const menuGroups: MenuGroup[] = [
     {
       label: 'Management',
       items: [
