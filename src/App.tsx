@@ -40,7 +40,7 @@ function AppRoutes() {
           <Route path="/trips" element={<TripsPage />} />
           <Route path="/trips/:tripId" element={<TripDetailPage />} />
           <Route path="/add-expense" element={<AddExpensePage />} />
-          <Route path="/approvals" element={<ApprovalsPage />} />
+          
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/team" element={<TeamPage />} />

@@ -6,7 +6,7 @@ const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Home' },
   { to: '/trips', icon: Map, label: 'Trips' },
   { to: '/add-expense', icon: Plus, label: 'Add', highlight: true },
-  { to: '/approvals', icon: ClipboardCheck, label: 'Approve', roles: ['admin', 'manager'] as string[] },
+  
   { to: '/settings', icon: Settings, label: 'More' },
 ];
 
