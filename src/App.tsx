@@ -12,6 +12,10 @@ import TripDetailPage from "@/pages/TripDetailPage";
 import AddExpensePage from "@/pages/AddExpensePage";
 import ApprovalsPage from "@/pages/ApprovalsPage";
 import ReportsPage from "@/pages/ReportsPage";
+import AlertsPage from "@/pages/AlertsPage";
+import TeamPage from "@/pages/TeamPage";
+import AuditLogsPage from "@/pages/AuditLogsPage";
+import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +43,10 @@ function AppRoutes() {
           <Route path="/add-expense" element={<AddExpensePage />} />
           <Route path="/approvals" element={<ApprovalsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/alerts" element={<AlertsPage />} />
+          <Route path="/team" element={<TeamPage />} />
+          <Route path="/audit-logs" element={<AuditLogsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

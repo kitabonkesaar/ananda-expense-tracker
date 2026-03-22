@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Map, Plus, ClipboardCheck, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Map, Plus, ClipboardCheck, Settings } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
 const navItems = [
@@ -7,7 +7,7 @@ const navItems = [
   { to: '/trips', icon: Map, label: 'Trips' },
   { to: '/add-expense', icon: Plus, label: 'Add', highlight: true },
   { to: '/approvals', icon: ClipboardCheck, label: 'Approve', roles: ['admin', 'manager'] as string[] },
-  { to: '/reports', icon: BarChart3, label: 'Reports' },
+  { to: '/settings', icon: Settings, label: 'More' },
 ];
 
 export default function BottomNav() {

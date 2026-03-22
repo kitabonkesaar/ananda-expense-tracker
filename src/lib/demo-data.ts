@@ -1,4 +1,4 @@
-import { User, Trip, Expense, Alert, DisciplineScore } from './types';
+import { User, Trip, Expense, Alert, DisciplineScore, AuditLog } from './types';
 
 export const demoUsers: User[] = [
   { id: 'u1', name: 'Rajesh Kumar', phone: '+91 98765 43210', role: 'admin', isActive: true, createdAt: '2024-01-01' },
@@ -54,6 +54,19 @@ export const demoDiscipline: DisciplineScore[] = [
   { userId: 'u4', onTime: 22, late: 1, rejected: 0, score: 22 * 2 - 1 * 3 },
   { userId: 'u5', onTime: 12, late: 5, rejected: 2, score: 12 * 2 - 5 * 3 - 2 * 5 },
   { userId: 'u6', onTime: 8, late: 7, rejected: 4, score: 8 * 2 - 7 * 3 - 4 * 5 },
+];
+
+export const demoAuditLogs: AuditLog[] = [
+  { id: 'l1', action: 'expense_created', userId: 'u3', metadata: { expenseId: 'e1', amount: 4500, category: 'Fuel' }, createdAt: '2026-03-15T08:30:00' },
+  { id: 'l2', action: 'expense_approved', userId: 'u1', metadata: { expenseId: 'e1', approvedAmount: 4500 }, createdAt: '2026-03-15T09:00:00' },
+  { id: 'l3', action: 'expense_created', userId: 'u4', metadata: { expenseId: 'e2', amount: 2800, category: 'Food' }, createdAt: '2026-03-15T13:15:00' },
+  { id: 'l4', action: 'trip_created', userId: 'u1', metadata: { tripId: 't1', name: 'Char Dham Yatra - March' }, createdAt: '2026-03-10T10:00:00' },
+  { id: 'l5', action: 'team_assigned', userId: 'u1', metadata: { tripId: 't1', members: 4 }, createdAt: '2026-03-10T10:05:00' },
+  { id: 'l6', action: 'expense_flagged', userId: 'u2', metadata: { expenseId: 'e6', reason: 'Large misc expense' }, createdAt: '2026-03-16T15:35:00' },
+  { id: 'l7', action: 'expense_rejected', userId: 'u1', metadata: { expenseId: 'e9', reason: 'No valid receipt' }, createdAt: '2026-03-17T11:00:00' },
+  { id: 'l8', action: 'user_login', userId: 'u3', metadata: { device: 'Android', ip: '192.168.1.45' }, createdAt: '2026-03-15T08:00:00' },
+  { id: 'l9', action: 'trip_status_changed', userId: 'u1', metadata: { tripId: 't3', from: 'active', to: 'completed' }, createdAt: '2026-02-08T18:00:00' },
+  { id: 'l10', action: 'expense_created', userId: 'u5', metadata: { expenseId: 'e4', amount: 350, category: 'Toll' }, createdAt: '2026-03-16T06:45:00' },
 ];
 
 export function getUserById(id: string) {
