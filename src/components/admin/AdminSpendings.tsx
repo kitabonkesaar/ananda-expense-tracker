@@ -233,8 +233,10 @@ export default function AdminSpendings() {
                   <th className="py-4 px-6 font-bold">Payment</th>
                   <th className="py-4 px-6 font-bold">Submitted By</th>
                   <th className="py-4 px-6 font-bold">Audit Meta</th>
+                  <th className="py-4 px-6 font-bold">Status</th>
                   <th className="py-4 px-6 font-bold text-center">Bill</th>
                   <th className="py-4 px-6 font-bold text-right">Trip</th>
+                  <th className="py-4 px-6 font-bold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -318,6 +320,18 @@ export default function AdminSpendings() {
                          </div>
                       </td>
 
+                      {/* Audit Status Badge */}
+                      <td className="py-4 px-6">
+                         <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
+                           exp.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                           exp.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                           exp.status === 'rejected' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                           'bg-slate-50 text-slate-400 border-slate-100'
+                         }`}>
+                            {exp.status}
+                         </span>
+                      </td>
+
                       {/* Bill Status */}
                       <td className="py-4 px-6 text-center">
                          <div className={`w-8 h-8 mx-auto rounded-lg flex items-center justify-center border ${hasBill ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-slate-50 border-slate-100 text-slate-300'}`}>
@@ -326,7 +340,7 @@ export default function AdminSpendings() {
                       </td>
 
                        {/* Trip */}
-                      <td className="py-4 px-6">
+                      <td className="py-4 px-6 text-right">
                          <span className="inline-block text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full max-w-[150px] truncate" title={trip?.name}>
                             {trip?.name || 'Unknown'}
                          </span>
@@ -334,7 +348,7 @@ export default function AdminSpendings() {
 
                       {/* Actions */}
                       <td className="py-4 px-6 text-right">
-                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <div className="flex items-center justify-end gap-1">
                             <button 
                               onClick={() => handleStartEdit(exp)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
