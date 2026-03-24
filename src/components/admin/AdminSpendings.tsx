@@ -4,7 +4,7 @@ import { useQuery, useMutation } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';
 import { useAuth } from '@/lib/auth-context';
-import { MapPin, Calendar, Clock, CreditCard, Wallet, Smartphone, Layers, Check, X, Download, FileSpreadsheet, FileText, Pencil, Trash2, Save, XCircle, ChevronDown } from 'lucide-react';
+import { MapPin, Calendar, Clock, CreditCard, Wallet, Smartphone, Layers, Check, X, Download, FileSpreadsheet, FileText, Pencil, Trash2, Save, XCircle, ChevronDown, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 function formatCurrency(n: number) {
@@ -116,14 +116,30 @@ export default function AdminSpendings() {
   const getUserByIdFn = (id: string) => allUsers.find(u => u._id === id);
 
   const [selectedTripFilter, setSelectedTripFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const expenses = useMemo(() => {
     let list = [...allExpenses];
+    
     if (selectedTripFilter !== 'all') {
       list = list.filter(e => e.tripId === selectedTripFilter);
     }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(e => {
+        const creator = getUserByIdFn(e.createdBy);
+        return (
+          e.description.toLowerCase().includes(q) ||
+          e.category.toLowerCase().includes(q) ||
+          e.subCategory?.toLowerCase().includes(q) ||
+          creator?.name.toLowerCase().includes(q)
+        );
+      });
+    }
+
     return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [allExpenses, selectedTripFilter]);
+  }, [allExpenses, selectedTripFilter, searchQuery, allUsers]);
 
   const handleDownloadCSV = () => {
     const csv = generateCSV(expenses, getUserByIdFn, allTrips);
@@ -218,6 +234,26 @@ export default function AdminSpendings() {
               </>
             )}
           </div>
+          {/* Search Bar */}
+          <div className="relative group w-64">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-2.5 transition-colors group-focus-within:text-orange-500" />
+            <input 
+              type="text"
+              placeholder="Search expenses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-100 border border-slate-200 text-slate-700 font-medium py-2 pl-9 pr-8 rounded-xl text-xs outline-none focus:ring-2 focus:ring-orange-100 focus:bg-white focus:border-orange-500 transition-all"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
           {/* Trip Selection Dropdown */}
           <div className="relative">
              <select
