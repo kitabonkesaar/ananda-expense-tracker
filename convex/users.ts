@@ -121,7 +121,7 @@ export const googleLogin = mutation({
     }
 
     // Sign up: Create new user
-    const adminEmails = ["dev.satyajitmohanty@gmail.com", "satya1999@gmail.com"];
+    const adminEmails = ["dev.satyajitmohanty@gmail.com", "satyasweb1999@gmail.com"];
     const role = adminEmails.includes(args.email) ? "admin" : "staff";
     
     const userId = await ctx.db.insert("users", {
