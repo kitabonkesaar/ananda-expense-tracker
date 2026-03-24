@@ -1,7 +1,11 @@
-import { demoTrips, getCategoryBreakdown, getTripBudgetStatus, getTripExpenses, getUserById, demoDiscipline } from '@/lib/demo-data';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { useAuth } from '@/lib/auth-context';
 import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
 import { Trophy, TrendingUp, User } from 'lucide-react';
+import { Id } from '../../convex/_generated/dataModel';
 
 function formatCurrency(n: number) {
   return '₹' + n.toLocaleString('en-IN');
@@ -10,11 +14,30 @@ function formatCurrency(n: number) {
 const COLORS = ['hsl(168, 60%, 36%)', 'hsl(36, 90%, 54%)', 'hsl(220, 70%, 55%)', 'hsl(0, 72%, 51%)', 'hsl(280, 60%, 55%)', 'hsl(152, 60%, 40%)'];
 
 export default function ReportsPage() {
-  const [tripId, setTripId] = useState(demoTrips[0]?.id || '');
+  const { allUsers } = useAuth();
+  const trips = useQuery(api.trips.list) ?? [];
+  const [tripId, setTripId] = useState<string>('');
   const [tab, setTab] = useState<'spending' | 'discipline'>('spending');
 
-  const breakdown = getCategoryBreakdown(tripId);
-  const expenses = getTripExpenses(tripId);
+  const disciplineScores = useQuery(api.disciplineScores.leaderboard) ?? [];
+
+  // Use first trip if none selected
+  const selectedTripId = tripId || trips[0]?._id;
+
+  const breakdown = useQuery(
+    api.trips.getCategoryBreakdown,
+    selectedTripId ? { tripId: selectedTripId as Id<"trips"> } : "skip"
+  ) ?? [];
+
+  const expenses = useQuery(
+    api.expenses.getByTrip,
+    selectedTripId ? { tripId: selectedTripId as Id<"trips"> } : "skip"
+  ) ?? [];
+
+  const getUserName = (id: string) => {
+    const u = allUsers.find(u => u._id === id);
+    return u?.name ?? 'Unknown';
+  };
 
   // Daily aggregation
   const dailyMap: Record<string, number> = {};
@@ -27,12 +50,10 @@ export default function ReportsPage() {
   // Staff spending
   const staffMap: Record<string, number> = {};
   expenses.forEach(e => {
-    const name = getUserById(e.createdBy)?.name || 'Unknown';
+    const name = getUserName(e.createdBy);
     staffMap[name] = (staffMap[name] || 0) + e.amount;
   });
   const staffData = Object.entries(staffMap).map(([name, amount]) => ({ name: name.split(' ')[0], amount }));
-
-  const sortedDiscipline = [...demoDiscipline].sort((a, b) => b.score - a.score);
 
   return (
     <div className="pb-24 px-4 pt-4">
@@ -51,8 +72,12 @@ export default function ReportsPage() {
       {tab === 'spending' ? (
         <>
           {/* Trip selector */}
-          <select value={tripId} onChange={e => setTripId(e.target.value)} className="w-full text-sm bg-card border border-border rounded-xl px-3 py-2.5 mb-5 text-foreground outline-none">
-            {demoTrips.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+          <select
+            value={selectedTripId || ''}
+            onChange={e => setTripId(e.target.value)}
+            className="w-full text-sm bg-card border border-border rounded-xl px-3 py-2.5 mb-5 text-foreground outline-none"
+          >
+            {trips.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
           </select>
 
           {/* Category pie */}
@@ -62,14 +87,14 @@ export default function ReportsPage() {
               <ResponsiveContainer>
                 <PieChart>
                   <Pie data={breakdown} dataKey="amount" nameKey="category" cx="50%" cy="50%" innerRadius={30} outerRadius={60} paddingAngle={3} strokeWidth={0}>
-                    {breakdown.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    {breakdown.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
                   <Tooltip formatter={(v: number) => formatCurrency(v)} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
-              {breakdown.map((item, i) => (
+              {breakdown.map((item: any, i: number) => (
                 <div key={item.category} className="flex items-center gap-1.5 text-[10px]">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
                   <span className="text-foreground">{item.category}: {formatCurrency(item.amount)}</span>
@@ -112,27 +137,24 @@ export default function ReportsPage() {
         /* Discipline Leaderboard */
         <div className="space-y-3 animate-fade-up stagger-2">
           <p className="text-xs text-muted-foreground mb-2">Score = (OnTime × 2) - (Late × 3) - (Rejected × 5)</p>
-          {sortedDiscipline.map((d, i) => {
-            const u = getUserById(d.userId);
-            return (
-              <div key={d.userId} className="flex items-center gap-3 bg-card p-4 rounded-xl border border-border shadow-sm">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                  i === 0 ? 'bg-accent text-accent-foreground' : 'bg-secondary text-secondary-foreground'
-                }`}>
-                  {i === 0 ? <Trophy className="w-4 h-4" /> : i + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{u?.name}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    ✓ {d.onTime} on-time · ⏰ {d.late} late · ✗ {d.rejected} rejected
-                  </p>
-                </div>
-                <div className={`text-lg font-bold tabular-nums ${d.score >= 20 ? 'text-success' : d.score >= 0 ? 'text-warning' : 'text-destructive'}`}>
-                  {d.score}
-                </div>
+          {disciplineScores.map((d, i) => (
+            <div key={d._id} className="flex items-center gap-3 bg-card p-4 rounded-xl border border-border shadow-sm">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+                i === 0 ? 'bg-accent text-accent-foreground' : 'bg-secondary text-secondary-foreground'
+              }`}>
+                {i === 0 ? <Trophy className="w-4 h-4" /> : i + 1}
               </div>
-            );
-          })}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">{getUserName(d.userId)}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  ✓ {d.onTime} on-time · ⏰ {d.late} late · ✗ {d.rejected} rejected
+                </p>
+              </div>
+              <div className={`text-lg font-bold tabular-nums ${d.score >= 20 ? 'text-success' : d.score >= 0 ? 'text-warning' : 'text-destructive'}`}>
+                {d.score}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

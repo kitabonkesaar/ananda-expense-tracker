@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { demoAlerts, getUserById } from '@/lib/demo-data';
-import { AlertTriangle, Bell, Shield, Clock, Filter } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { AlertTriangle, Bell, Shield, Clock } from 'lucide-react';
 import { AlertSeverity, AlertType } from '@/lib/types';
 
 const severityStyles: Record<AlertSeverity, string> = {
@@ -23,8 +24,9 @@ const typeLabels: Record<AlertType, { label: string; icon: typeof AlertTriangle 
 
 export default function AlertsPage() {
   const [filter, setFilter] = useState<'all' | AlertSeverity>('all');
+  const alerts = useQuery(api.alerts.list) ?? [];
 
-  const filtered = demoAlerts.filter(a => filter === 'all' || a.severity === filter);
+  const filtered = alerts.filter(a => filter === 'all' || a.severity === filter);
 
   return (
     <div className="pb-24 px-4 pt-4">
@@ -32,7 +34,7 @@ export default function AlertsPage() {
         <h2 className="text-lg font-bold text-foreground">Alerts</h2>
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Bell className="w-3.5 h-3.5" />
-          {demoAlerts.length} total
+          {alerts.length} total
         </div>
       </div>
 
@@ -56,27 +58,27 @@ export default function AlertsPage() {
           <div className="text-center py-12 text-muted-foreground text-sm">No alerts</div>
         )}
         {filtered.map(alert => {
-          const TypeIcon = typeLabels[alert.type].icon;
+          const TypeIcon = typeLabels[alert.type as AlertType]?.icon || AlertTriangle;
           return (
             <div
-              key={alert.id}
-              className={`p-4 rounded-xl border ${severityStyles[alert.severity]}`}
+              key={alert._id}
+              className={`p-4 rounded-xl border ${severityStyles[alert.severity as AlertSeverity]}`}
             >
               <div className="flex items-start gap-3">
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
                   alert.severity === 'high' ? 'bg-destructive/15' :
                   alert.severity === 'medium' ? 'bg-warning/15' : 'bg-muted'
                 }`}>
-                  <TypeIcon className={`w-4 h-4 ${severityIcon[alert.severity]}`} />
+                  <TypeIcon className={`w-4 h-4 ${severityIcon[alert.severity as AlertSeverity]}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{alert.message}</p>
                   <div className="flex items-center gap-2 mt-1.5">
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize ${severityStyles[alert.severity]}`}>
+                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize ${severityStyles[alert.severity as AlertSeverity]}`}>
                       {alert.severity}
                     </span>
                     <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground capitalize">
-                      {typeLabels[alert.type].label}
+                      {typeLabels[alert.type as AlertType]?.label || alert.type}
                     </span>
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1.5">

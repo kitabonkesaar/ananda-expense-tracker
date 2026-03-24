@@ -69,6 +69,9 @@
   .stagger-3 { animation-delay: 180ms; }
   .stagger-4 { animation-delay: 240ms; }
   .stagger-5 { animation-delay: 300ms; }
+  .glass-panel {
+    @apply bg-card/60 backdrop-blur-xl border border-white/20 shadow-xl;
+  }
 }
 
 @keyframes fadeUp {

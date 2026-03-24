@@ -1,7 +1,9 @@
+import { Id } from "../../convex/_generated/dataModel";
+
 export type UserRole = 'admin' | 'staff';
 
 export interface User {
-  id: string;
+  _id: Id<"users">;
   name: string;
   phone: string;
   role: UserRole;
@@ -12,31 +14,36 @@ export interface User {
 export type TripStatus = 'draft' | 'active' | 'completed';
 
 export interface Trip {
-  id: string;
+  _id: Id<"trips">;
   name: string;
   startDate: string;
   endDate: string;
   totalBudget: number;
-  createdBy: string;
-  team: string[];
+  categoryBudgets?: Record<string, number>;
+  createdBy: Id<"users">;
+  team: Id<"users">[];
   status: TripStatus;
   createdAt: string;
 }
 
-export type ExpenseCategory = 'Fuel' | 'Food' | 'Toll' | 'Hotel' | 'Transport' | 'Misc';
+export type ExpenseCategory = string;
 
 export type ExpenseStatus = 'pending' | 'approved' | 'rejected' | 'flagged';
 
+export type ExpensePaymentMethod = 'Cash' | 'UPI' | 'Card' | 'Other';
+
 export interface Expense {
-  id: string;
-  tripId: string;
+  _id: Id<"expenses">;
+  tripId: Id<"trips">;
   amount: number;
-  category: ExpenseCategory;
+  category: string;
+  subCategory?: string;
   description: string;
   imageUrl: string;
-  createdBy: string;
+  createdBy: Id<"users">;
   location: { lat: number; lng: number };
   status: ExpenseStatus;
+  paymentMethod: ExpensePaymentMethod;
   rejectionReason?: string;
   createdAt: string;
 }
@@ -45,8 +52,8 @@ export type AlertType = 'budget' | 'inactivity' | 'suspicious';
 export type AlertSeverity = 'low' | 'medium' | 'high';
 
 export interface Alert {
-  id: string;
-  tripId: string;
+  _id: Id<"alerts">;
+  tripId: Id<"trips">;
   type: AlertType;
   message: string;
   severity: AlertSeverity;
@@ -54,17 +61,24 @@ export interface Alert {
 }
 
 export interface AuditLog {
-  id: string;
+  _id: Id<"audit_logs">;
   action: string;
-  userId: string;
+  userId: Id<"users">;
   metadata: Record<string, unknown>;
   createdAt: string;
 }
 
 export interface DisciplineScore {
-  userId: string;
+  _id: Id<"discipline_scores">;
+  userId: Id<"users">;
   onTime: number;
   late: number;
   rejected: number;
   score: number;
+}
+
+export interface Category {
+  _id: Id<"categories">;
+  name: string;
+  subCategories: string[];
 }

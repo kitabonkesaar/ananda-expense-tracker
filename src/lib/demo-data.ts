@@ -1,4 +1,4 @@
-import { User, Trip, Expense, Alert, DisciplineScore, AuditLog } from './types';
+import { User, Trip, Expense, Alert, DisciplineScore, AuditLog, ExpenseStatus } from './types';
 
 export const demoUsers: User[] = [
   { id: 'u1', name: 'Rajesh Kumar', phone: '+91 98765 43210', role: 'admin', isActive: true, createdAt: '2024-01-01' },
@@ -28,18 +28,18 @@ export const demoTrips: Trip[] = [
 ];
 
 export const demoExpenses: Expense[] = [
-  { id: 'e1', tripId: 't1', amount: 4500, category: 'Fuel', description: 'Diesel at Haridwar pump', imageUrl: '/placeholder.svg', createdBy: 'u3', location: { lat: 29.9457, lng: 78.1642 }, status: 'approved', createdAt: '2026-03-15T08:30:00' },
-  { id: 'e2', tripId: 't1', amount: 2800, category: 'Food', description: 'Lunch for 12 passengers', imageUrl: '/placeholder.svg', createdBy: 'u4', location: { lat: 30.0869, lng: 78.2676 }, status: 'approved', createdAt: '2026-03-15T13:15:00' },
-  { id: 'e3', tripId: 't1', amount: 8500, category: 'Hotel', description: 'Night halt at Rishikesh dharamshala', imageUrl: '/placeholder.svg', createdBy: 'u3', location: { lat: 30.0869, lng: 78.2676 }, status: 'pending', createdAt: '2026-03-15T20:00:00' },
-  { id: 'e4', tripId: 't1', amount: 350, category: 'Toll', description: 'NH toll booth Roorkee', imageUrl: '/placeholder.svg', createdBy: 'u5', location: { lat: 29.8543, lng: 77.8880 }, status: 'approved', createdAt: '2026-03-16T06:45:00' },
-  { id: 'e5', tripId: 't1', amount: 6200, category: 'Fuel', description: 'Diesel refill Devprayag', imageUrl: '/placeholder.svg', createdBy: 'u3', location: { lat: 30.1466, lng: 78.5963 }, status: 'pending', createdAt: '2026-03-16T10:20:00' },
-  { id: 'e6', tripId: 't1', amount: 15000, category: 'Misc', description: 'Emergency vehicle repair', imageUrl: '/placeholder.svg', createdBy: 'u3', location: { lat: 30.7352, lng: 79.0669 }, status: 'flagged', createdAt: '2026-03-16T15:30:00' },
-  { id: 'e7', tripId: 't1', amount: 1200, category: 'Food', description: 'Tea and snacks Joshimath', imageUrl: '/placeholder.svg', createdBy: 'u4', location: { lat: 30.5550, lng: 79.5650 }, status: 'approved', createdAt: '2026-03-17T07:00:00' },
-  { id: 'e8', tripId: 't1', amount: 3500, category: 'Food', description: 'Dinner for group at Badrinath', imageUrl: '/placeholder.svg', createdBy: 'u4', location: { lat: 30.7449, lng: 79.4937 }, status: 'pending', createdAt: '2026-03-17T19:30:00' },
-  { id: 'e9', tripId: 't1', amount: 500, category: 'Misc', description: 'Parking charges', imageUrl: '/placeholder.svg', createdBy: 'u5', location: { lat: 30.7449, lng: 79.4937 }, status: 'rejected', rejectionReason: 'No valid receipt', createdAt: '2026-03-17T10:00:00' },
-  { id: 'e10', tripId: 't3', amount: 3200, category: 'Fuel', description: 'Diesel on way to Tirupati', imageUrl: '/placeholder.svg', createdBy: 'u4', location: { lat: 13.6288, lng: 79.4192 }, status: 'approved', createdAt: '2026-02-01T07:00:00' },
-  { id: 'e11', tripId: 't3', amount: 9500, category: 'Hotel', description: 'Guest house booking', imageUrl: '/placeholder.svg', createdBy: 'u5', location: { lat: 13.6288, lng: 79.4192 }, status: 'approved', createdAt: '2026-02-01T18:00:00' },
-  { id: 'e12', tripId: 't3', amount: 4100, category: 'Food', description: 'Meals for 2 days', imageUrl: '/placeholder.svg', createdBy: 'u4', location: { lat: 13.6288, lng: 79.4192 }, status: 'approved', createdAt: '2026-02-02T12:00:00' },
+  { id: 'e1', tripId: 't1', amount: 4500, category: 'Fuel', subCategory: 'Diesel', description: 'Diesel at Haridwar pump', imageUrl: '/placeholder.svg', createdBy: 'u3', location: { lat: 29.9457, lng: 78.1642 }, status: 'approved', paymentMethod: 'Cash', createdAt: '2026-03-15T08:30:00' },
+  { id: 'e2', tripId: 't1', amount: 2800, category: 'Food', subCategory: 'Lunch', description: 'Lunch for 12 passengers', imageUrl: '/placeholder.svg', createdBy: 'u4', location: { lat: 30.0869, lng: 78.2676 }, status: 'approved', paymentMethod: 'UPI', createdAt: '2026-03-15T13:15:00' },
+  { id: 'e3', tripId: 't1', amount: 8500, category: 'Hotel', subCategory: 'Lodge', description: 'Night halt at Rishikesh dharamshala', imageUrl: '/placeholder.svg', createdBy: 'u3', location: { lat: 30.0869, lng: 78.2676 }, status: 'pending', paymentMethod: 'Cash', createdAt: '2026-03-15T20:00:00' },
+  { id: 'e4', tripId: 't1', amount: 350, category: 'Toll', subCategory: 'NHAI', description: 'NH toll booth Roorkee', imageUrl: '/placeholder.svg', createdBy: 'u5', location: { lat: 29.8543, lng: 77.8880 }, status: 'approved', paymentMethod: 'Cash', createdAt: '2026-03-16T06:45:00' },
+  { id: 'e5', tripId: 't1', amount: 6200, category: 'Fuel', subCategory: 'Diesel', description: 'Diesel refill Devprayag', imageUrl: '/placeholder.svg', createdBy: 'u3', location: { lat: 30.1466, lng: 78.5963 }, status: 'pending', paymentMethod: 'UPI', createdAt: '2026-03-16T10:20:00' },
+  { id: 'e6', tripId: 't1', amount: 15000, category: 'Misc', description: 'Emergency vehicle repair', imageUrl: '/placeholder.svg', createdBy: 'u3', location: { lat: 30.7352, lng: 79.0669 }, status: 'flagged', paymentMethod: 'Cash', createdAt: '2026-03-16T15:30:00' },
+  { id: 'e7', tripId: 't1', amount: 1200, category: 'Food', description: 'Tea and snacks Joshimath', imageUrl: '/placeholder.svg', createdBy: 'u4', location: { lat: 30.5550, lng: 79.5650 }, status: 'approved', paymentMethod: 'Cash', createdAt: '2026-03-17T07:00:00' },
+  { id: 'e8', tripId: 't1', amount: 3500, category: 'Food', description: 'Dinner for group at Badrinath', imageUrl: '/placeholder.svg', createdBy: 'u4', location: { lat: 30.7449, lng: 79.4937 }, status: 'pending', paymentMethod: 'UPI', createdAt: '2026-03-17T19:30:00' },
+  { id: 'e9', tripId: 't1', amount: 500, category: 'Misc', description: 'Parking charges', imageUrl: '/placeholder.svg', createdBy: 'u5', location: { lat: 30.7449, lng: 79.4937 }, status: 'rejected', rejectionReason: 'No valid receipt', paymentMethod: 'Cash', createdAt: '2026-03-17T10:00:00' },
+  { id: 'e10', tripId: 't3', amount: 3200, category: 'Fuel', description: 'Diesel on way to Tirupati', imageUrl: '/placeholder.svg', createdBy: 'u4', location: { lat: 13.6288, lng: 79.4192 }, status: 'approved', paymentMethod: 'Cash', createdAt: '2026-02-01T07:00:00' },
+  { id: 'e11', tripId: 't3', amount: 9500, category: 'Hotel', description: 'Guest house booking', imageUrl: '/placeholder.svg', createdBy: 'u5', location: { lat: 13.6288, lng: 79.4192 }, status: 'approved', paymentMethod: 'UPI', createdAt: '2026-02-01T18:00:00' },
+  { id: 'e12', tripId: 't3', amount: 4100, category: 'Food', description: 'Meals for 2 days', imageUrl: '/placeholder.svg', createdBy: 'u4', location: { lat: 13.6288, lng: 79.4192 }, status: 'approved', paymentMethod: 'Cash', createdAt: '2026-02-02T12:00:00' },
 ];
 
 export const demoAlerts: Alert[] = [
@@ -74,7 +74,7 @@ export function getUserById(id: string) {
 }
 
 export function getTripExpenses(tripId: string) {
-  return demoExpenses.filter(e => e.tripId === tripId);
+  return getDynamicExpenses().filter(e => e.tripId === tripId);
 }
 
 export function getTripBudgetStatus(tripId: string) {
@@ -91,3 +91,82 @@ export function getCategoryBreakdown(tripId: string) {
   expenses.forEach(e => { breakdown[e.category] = (breakdown[e.category] || 0) + e.amount; });
   return Object.entries(breakdown).map(([category, amount]) => ({ category, amount }));
 }
+
+export function getSubCategories(): Record<string, string[]> {
+  const data = localStorage.getItem('demoSubCategories');
+  if (data) return JSON.parse(data);
+  const initial = {
+    Fuel: ['Diesel', 'Petrol', 'CNG', 'EV Loading'],
+    Food: ['Breakfast', 'Lunch', 'Dinner', 'Snacks'],
+    Hotel: ['Guest House', 'Lodge', '5-Star'],
+    Toll: ['NHAI', 'State Toll', 'Bridge'],
+    Transport: ['Bus', 'Taxi', 'Train'],
+    Misc: ['Repairs', 'Medical', 'Fines', 'Parking'],
+  };
+  localStorage.setItem('demoSubCategories', JSON.stringify(initial));
+  return initial;
+}
+
+export function saveSubCategories(data: Record<string, string[]>) {
+  localStorage.setItem('demoSubCategories', JSON.stringify(data));
+}
+
+export function getStoredExpenseStatuses(): Record<string, ExpenseStatus> {
+  const data = localStorage.getItem('demoExpenseStatuses');
+  return data ? JSON.parse(data) : {};
+}
+
+export function saveExpenseStatuses(data: Record<string, ExpenseStatus>) {
+  localStorage.setItem('demoExpenseStatuses', JSON.stringify(data));
+}
+
+export function saveNewExpense(baseExpense: Omit<Expense, 'id' | 'createdAt' | 'status'>) {
+  const newExpense: Expense = {
+    ...baseExpense,
+    id: `e_new_${Date.now()}`,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+  };
+  const existing = localStorage.getItem('demoNewExpenses');
+  const parsed = existing ? JSON.parse(existing) : [];
+  parsed.push(newExpense);
+  localStorage.setItem('demoNewExpenses', JSON.stringify(parsed));
+}
+
+export function getDynamicExpenses(): Expense[] {
+  const statuses = getStoredExpenseStatuses();
+  const existing = localStorage.getItem('demoNewExpenses');
+  const newExpenses: Expense[] = existing ? JSON.parse(existing) : [];
+  
+  const allExpenses = [...demoExpenses, ...newExpenses];
+  
+  return allExpenses.map(e => ({
+    ...e,
+    status: statuses[e.id] || e.status
+  }));
+}
+
+export function getDynamicTrips(): Trip[] {
+  const existing = localStorage.getItem('demoNewTrips');
+  const newTrips: Trip[] = existing ? JSON.parse(existing) : [];
+  return [...demoTrips, ...newTrips];
+}
+
+export function saveNewTrip(trip: Omit<Trip, 'id' | 'createdAt'>) {
+  const newTrip: Trip = {
+    ...trip,
+    id: `t_new_${Date.now()}`,
+    createdAt: new Date().toISOString(),
+  };
+  const existing = localStorage.getItem('demoNewTrips');
+  const parsed: Trip[] = existing ? JSON.parse(existing) : [];
+  // Set any other active trip to completed if this one is active
+  if (newTrip.status === 'active') {
+    parsed.forEach(t => { if (t.status === 'active') t.status = 'completed'; });
+    demoTrips.forEach(t => { if (t.status === 'active') t.status = 'completed'; });
+  }
+  parsed.push(newTrip);
+  localStorage.setItem('demoNewTrips', JSON.stringify(parsed));
+  return newTrip;
+}
+

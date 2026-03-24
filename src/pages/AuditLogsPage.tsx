@@ -1,5 +1,7 @@
-import { demoAuditLogs, getUserById } from '@/lib/demo-data';
-import { FileText, UserCircle, ArrowRight, Filter } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { useAuth } from '@/lib/auth-context';
+import { FileText, UserCircle, ArrowRight } from 'lucide-react';
 
 const actionLabels: Record<string, { label: string; color: string }> = {
   expense_created: { label: 'Expense Created', color: 'bg-primary/10 text-primary' },
@@ -13,7 +15,13 @@ const actionLabels: Record<string, { label: string; color: string }> = {
 };
 
 export default function AuditLogsPage() {
-  const sortedLogs = [...demoAuditLogs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const { allUsers } = useAuth();
+  const auditLogs = useQuery(api.auditLogs.list) ?? [];
+
+  const getUserName = (id: string) => {
+    const u = allUsers.find(u => u._id === id);
+    return u?.name ?? 'Unknown';
+  };
 
   return (
     <div className="pb-24 px-4 pt-4">
@@ -21,27 +29,28 @@ export default function AuditLogsPage() {
         <h2 className="text-lg font-bold text-foreground">Audit Logs</h2>
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <FileText className="w-3.5 h-3.5" />
-          {demoAuditLogs.length} entries
+          {auditLogs.length} entries
         </div>
       </div>
 
       <div className="space-y-2 animate-fade-up stagger-1">
-        {sortedLogs.map(log => {
-          const actor = getUserById(log.userId);
+        {auditLogs.map(log => {
+          const actorName = getUserName(log.userId);
           const actionInfo = actionLabels[log.action] || { label: log.action, color: 'bg-muted text-muted-foreground' };
-          const metaStr = Object.entries(log.metadata)
+          const metadata = log.metadata as Record<string, unknown>;
+          const metaStr = Object.entries(metadata)
             .map(([k, v]) => `${k}: ${v}`)
             .join(' · ');
 
           return (
-            <div key={log.id} className="bg-card p-4 rounded-xl border border-border shadow-sm">
+            <div key={log._id} className="bg-card p-4 rounded-xl border border-border shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
                   <UserCircle className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-foreground">{actor?.name || 'Unknown'}</span>
+                    <span className="text-sm font-semibold text-foreground">{actorName}</span>
                     <ArrowRight className="w-3 h-3 text-muted-foreground" />
                     <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${actionInfo.color}`}>
                       {actionInfo.label}
@@ -54,6 +63,9 @@ export default function AuditLogsPage() {
             </div>
           );
         })}
+        {auditLogs.length === 0 && (
+          <p className="text-center text-sm text-muted-foreground py-8">No audit logs yet</p>
+        )}
       </div>
     </div>
   );

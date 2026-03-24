@@ -1,35 +1,62 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Camera, MapPin, IndianRupee, Tag, FileText, Check } from 'lucide-react';
-import { ExpenseCategory } from '@/lib/types';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { useAuth } from '@/lib/auth-context';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { MapPin, IndianRupee, FileText, Check } from 'lucide-react';
 import { toast } from 'sonner';
-
-const categories: ExpenseCategory[] = ['Fuel', 'Food', 'Toll', 'Hotel', 'Transport', 'Misc'];
 
 export default function AddExpensePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState<ExpenseCategory | ''>('');
+  const [category, setCategory] = useState<string>('');
+  const [subCategory, setSubCategory] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'UPI' | 'Card' | 'Other'>('Cash');
   const [description, setDescription] = useState('');
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [hasBill, setHasBill] = useState(false);
 
-  const canSubmit = amount && category && photo;
+  const categoriesMap = useQuery(api.categories.getMap) ?? {};
+  const activeTrip = useQuery(api.trips.getActive);
+  const createExpense = useMutation(api.expenses.create);
 
-  const handlePhotoCapture = () => {
-    // Demo: simulate photo capture
-    setPhoto('/placeholder.svg');
-    toast.success('Bill photo captured');
-  };
+  if (user?.role !== 'staff' && user?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
 
-  const handleSubmit = () => {
+  const canSubmit = amount && category;
+
+  const handleSubmit = async () => {
     if (!canSubmit) {
-      if (!photo) toast.error('Bill photo is mandatory!');
       if (!category) toast.error('Select a category');
       if (!amount) toast.error('Enter an amount');
       return;
     }
-    toast.success('Expense submitted successfully!');
-    navigate('/dashboard');
+
+    if (!activeTrip) {
+      toast.error('No active trip found');
+      return;
+    }
+
+    try {
+      await createExpense({
+        tripId: activeTrip._id,
+        amount: Number(amount),
+        category: category,
+        subCategory: subCategory || undefined,
+        paymentMethod,
+        description: description || 'No description provided',
+        imageUrl: hasBill ? 'verified' : '/placeholder.svg',
+        createdBy: user!._id,
+        location: { lat: 30.0869, lng: 78.2676 }, // mock location
+      });
+
+      toast.success('Expense submitted successfully!');
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error('Failed to submit expense');
+    }
   };
 
   return (
@@ -40,7 +67,7 @@ export default function AddExpensePage() {
         {/* Amount */}
         <div>
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Amount *</label>
-          <div className="flex items-center gap-2 bg-card rounded-xl px-4 py-3.5 border border-border shadow-sm">
+          <div className="flex items-center gap-2 bg-card rounded-xl px-4 py-3.5 border border-border shadow-sm text-foreground">
             <IndianRupee className="w-5 h-5 text-muted-foreground" />
             <input
               type="number"
@@ -57,17 +84,59 @@ export default function AddExpensePage() {
         <div>
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Category *</label>
           <div className="grid grid-cols-3 gap-2">
-            {categories.map(cat => (
+            {Object.keys(categoriesMap).map(cat => (
               <button
                 key={cat}
-                onClick={() => setCategory(cat)}
-                className={`py-2.5 rounded-xl text-sm font-medium transition-all active:scale-95 ${
+                onClick={() => { setCategory(cat); setSubCategory(''); }}
+                className={`py-2.5 px-1 rounded-xl text-sm font-medium transition-all active:scale-95 ${
                   category === cat
                     ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                    : 'bg-card border border-border text-foreground'
+                    : 'bg-card border border-border text-foreground hover:bg-secondary'
                 }`}
               >
                 {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sub Category */}
+        {category && categoriesMap[category] && categoriesMap[category].length > 0 && (
+          <div className="animate-fade-up">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Sub Category (Optional)</label>
+            <div className="flex flex-wrap gap-2">
+              {categoriesMap[category].map(sub => (
+                <button
+                  key={sub}
+                  onClick={() => setSubCategory(sub)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 border ${
+                    subCategory === sub
+                      ? 'bg-primary/10 border-primary text-primary shadow-sm'
+                      : 'bg-card border-border text-foreground hover:bg-secondary'
+                  }`}
+                >
+                  {sub}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Payment Method */}
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Payment Method *</label>
+          <div className="grid grid-cols-4 gap-2">
+            {['Cash', 'UPI', 'Card', 'Other'].map(method => (
+              <button
+                key={method}
+                onClick={() => setPaymentMethod(method as any)}
+                className={`py-2 rounded-lg text-xs font-bold transition-all active:scale-95 border ${
+                  paymentMethod === method
+                    ? 'bg-primary/10 border-primary text-primary shadow-sm'
+                    : 'bg-card border-border text-foreground hover:bg-secondary'
+                }`}
+              >
+                {method}
               </button>
             ))}
           </div>
@@ -88,30 +157,20 @@ export default function AddExpensePage() {
           </div>
         </div>
 
-        {/* Photo Upload */}
-        <div>
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Bill Photo * (Mandatory)</label>
-          {photo ? (
-            <div className="relative bg-card rounded-xl border border-border p-3 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 rounded-lg bg-success/10 flex items-center justify-center">
-                  <Check className="w-8 h-8 text-success" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">Photo captured</p>
-                  <button onClick={() => setPhoto(null)} className="text-xs text-destructive mt-0.5">Remove</button>
-                </div>
-              </div>
+        {/* Bill Available Checkbox */}
+        <div 
+          onClick={() => setHasBill(!hasBill)}
+          className="flex items-center justify-between bg-card rounded-xl border border-border p-4 shadow-sm cursor-pointer active:scale-[0.98] transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${hasBill ? 'bg-primary border-primary' : 'border-border'}`}>
+              {hasBill && <Check className="w-4 h-4 text-primary-foreground" />}
             </div>
-          ) : (
-            <button
-              onClick={handlePhotoCapture}
-              className="w-full flex flex-col items-center gap-2 bg-card rounded-xl border-2 border-dashed border-border p-6 active:scale-[0.98] transition-transform"
-            >
-              <Camera className="w-8 h-8 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Tap to capture bill photo</span>
-            </button>
-          )}
+            <span className="text-sm font-semibold text-foreground">Physical Bill Available?</span>
+          </div>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${hasBill ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
+            {hasBill ? 'YES' : 'NO'}
+          </span>
         </div>
 
         {/* Location */}

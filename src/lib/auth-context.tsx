@@ -1,35 +1,65 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { User, UserRole } from '@/lib/types';
-import { demoUsers } from '@/lib/demo-data';
+import { Id } from '../../convex/_generated/dataModel';
 
 interface AuthContextType {
   user: User | null;
   login: (phone: string) => boolean;
+  setGoogleUser: (id: string) => void;
   logout: () => void;
   switchRole: (role: UserRole) => void;
+  allUsers: User[];
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [userId, setUserIdState] = useState<Id<"users"> | null>(
+    (localStorage.getItem('budgetGuardUserId') as Id<"users">) || null
+  );
+  
+  const allUsersRaw = useQuery(api.users.list) ?? [];
 
-  const login = (phone: string) => {
-    // Demo: match any user or default to admin
-    const found = demoUsers.find(u => u.phone.includes(phone)) || demoUsers[0];
-    setUser(found);
-    return true;
-  };
+  // Cast to our User type
+  const allUsers = allUsersRaw as unknown as User[];
 
-  const logout = () => setUser(null);
+  // Current logged-in user
+  const user = userId ? allUsers.find(u => u._id === userId) ?? null : null;
 
-  const switchRole = (role: UserRole) => {
-    const found = demoUsers.find(u => u.role === role);
-    if (found) setUser(found);
-  };
+  const setUserId = useCallback((id: Id<"users"> | null) => {
+    setUserIdState(id);
+    if (id) {
+      localStorage.setItem('budgetGuardUserId', id);
+    } else {
+      localStorage.removeItem('budgetGuardUserId');
+    }
+  }, []);
+
+  const login = useCallback((phone: string) => {
+    // Match any user or default to admin
+    const found = allUsers.find(u => u.phone?.includes(phone)) || allUsers.find(u => u.role === 'admin') || allUsers[0];
+    if (found) {
+      setUserId(found._id);
+      return true;
+    }
+    return false;
+  }, [allUsers, setUserId]);
+
+  const setGoogleUser = useCallback((id: string) => {
+    setUserId(id as Id<"users">);
+  }, [setUserId]);
+
+  const logout = useCallback(() => setUserId(null), [setUserId]);
+
+  const switchRole = useCallback((role: UserRole) => {
+    const found = allUsers.find(u => u.role === role);
+    if (found) setUserId(found._id);
+  }, [allUsers, setUserId]);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, switchRole }}>
+    <AuthContext.Provider value={{ user, login, setGoogleUser, logout, switchRole, allUsers }}>
       {children}
     </AuthContext.Provider>
   );

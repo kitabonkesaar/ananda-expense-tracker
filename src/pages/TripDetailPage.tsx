@@ -1,5 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useParams, useNavigate } from 'react-router-dom';
-import { demoTrips, getTripExpenses, getTripBudgetStatus, getCategoryBreakdown, getUserById } from '@/lib/demo-data';
+import { useAuth } from '@/lib/auth-context';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { ArrowLeft, IndianRupee, Users, Calendar } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
@@ -19,12 +23,31 @@ const COLORS = [
 export default function TripDetailPage() {
   const { tripId } = useParams();
   const navigate = useNavigate();
-  const trip = demoTrips.find(t => t.id === tripId);
-  if (!trip) return <div className="p-6 text-center text-muted-foreground">Trip not found</div>;
+  const { allUsers } = useAuth();
 
-  const budget = getTripBudgetStatus(trip.id);
-  const expenses = getTripExpenses(trip.id);
-  const breakdown = getCategoryBreakdown(trip.id);
+  const trip = useQuery(
+    api.trips.getById,
+    tripId ? { id: tripId as Id<"trips"> } : "skip"
+  );
+  const budgetStatus = useQuery(
+    api.trips.getBudgetStatus,
+    tripId ? { tripId: tripId as Id<"trips"> } : "skip"
+  );
+  const expenses = useQuery(
+    api.expenses.getByTrip,
+    tripId ? { tripId: tripId as Id<"trips"> } : "skip"
+  ) ?? [];
+  const breakdown = useQuery(
+    api.trips.getCategoryBreakdown,
+    tripId ? { tripId: tripId as Id<"trips"> } : "skip"
+  ) ?? [];
+
+  const getUserName = (id: string) => {
+    const u = allUsers.find(u => u._id === id);
+    return u?.name ?? 'Unknown';
+  };
+
+  if (!trip) return <div className="p-6 text-center text-muted-foreground">Loading trip...</div>;
 
   return (
     <div className="pb-24 px-4 pt-4">
@@ -41,20 +64,20 @@ export default function TripDetailPage() {
       </div>
 
       {/* Budget Card */}
-      {budget && (
+      {budgetStatus && (
         <div className="animate-fade-up stagger-1 bg-card rounded-xl p-5 border border-border shadow-sm mb-5">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Budget Overview</h3>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div>
-              <p className="text-lg font-bold text-foreground tabular-nums">{formatCurrency(budget.budget)}</p>
+              <p className="text-lg font-bold text-foreground tabular-nums">{formatCurrency(budgetStatus.budget)}</p>
               <p className="text-[10px] text-muted-foreground">Total</p>
             </div>
             <div>
-              <p className="text-lg font-bold text-foreground tabular-nums">{formatCurrency(budget.spent)}</p>
+              <p className="text-lg font-bold text-foreground tabular-nums">{formatCurrency(budgetStatus.spent)}</p>
               <p className="text-[10px] text-muted-foreground">Spent</p>
             </div>
             <div>
-              <p className={`text-lg font-bold tabular-nums ${budget.remaining < 0 ? 'text-destructive' : 'text-success'}`}>{formatCurrency(budget.remaining)}</p>
+              <p className={`text-lg font-bold tabular-nums ${budgetStatus.remaining < 0 ? 'text-destructive' : 'text-success'}`}>{formatCurrency(budgetStatus.remaining)}</p>
               <p className="text-[10px] text-muted-foreground">Remaining</p>
             </div>
           </div>
@@ -62,8 +85,8 @@ export default function TripDetailPage() {
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{
-                width: `${Math.min(budget.percentage, 100)}%`,
-                backgroundColor: budget.percentage > 80 ? 'hsl(var(--destructive))' : budget.percentage > 60 ? 'hsl(var(--warning))' : 'hsl(var(--primary))',
+                width: `${Math.min(budgetStatus.percentage, 100)}%`,
+                backgroundColor: budgetStatus.percentage > 80 ? 'hsl(var(--destructive))' : budgetStatus.percentage > 60 ? 'hsl(var(--warning))' : 'hsl(var(--primary))',
               }}
             />
           </div>
@@ -79,13 +102,13 @@ export default function TripDetailPage() {
               <ResponsiveContainer>
                 <PieChart>
                   <Pie data={breakdown} dataKey="amount" nameKey="category" cx="50%" cy="50%" innerRadius={25} outerRadius={50} paddingAngle={3} strokeWidth={0}>
-                    {breakdown.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
+                    {breakdown.map((_: any, idx: number) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <div className="flex-1 space-y-1.5">
-              {breakdown.map((item, idx) => (
+              {breakdown.map((item: any, idx: number) => (
                 <div key={item.category} className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
@@ -103,16 +126,16 @@ export default function TripDetailPage() {
       <div className="animate-fade-up stagger-3 bg-card rounded-xl p-5 border border-border shadow-sm mb-5">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Team</h3>
         <div className="flex flex-wrap gap-2">
-          {trip.team.map(uid => {
-            const u = getUserById(uid);
-            return u ? (
+          {trip.team.map((uid: string) => {
+            const name = getUserName(uid);
+            return (
               <div key={uid} className="flex items-center gap-2 bg-secondary rounded-lg px-3 py-2">
                 <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                  {u.name.split(' ').map(n => n[0]).join('')}
+                  {name.split(' ').map((n: string) => n[0]).join('')}
                 </div>
-                <span className="text-xs text-foreground">{u.name}</span>
+                <span className="text-xs text-foreground">{name}</span>
               </div>
-            ) : null;
+            );
           })}
         </div>
       </div>
@@ -121,29 +144,26 @@ export default function TripDetailPage() {
       <div className="animate-fade-up stagger-4">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">All Expenses ({expenses.length})</h3>
         <div className="space-y-2">
-          {expenses.map(exp => {
-            const creator = getUserById(exp.createdBy);
-            return (
-              <div key={exp.id} className="flex items-center gap-3 bg-card p-3 rounded-xl border border-border">
-                <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                  <IndianRupee className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{exp.description}</p>
-                  <p className="text-[10px] text-muted-foreground">{exp.category} • {creator?.name} • {new Date(exp.createdAt).toLocaleDateString()}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-foreground tabular-nums">{formatCurrency(exp.amount)}</p>
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                    exp.status === 'approved' ? 'bg-success/10 text-success' :
-                    exp.status === 'pending' ? 'bg-accent/10 text-accent' :
-                    exp.status === 'flagged' ? 'bg-destructive/10 text-destructive' :
-                    'bg-muted text-muted-foreground'
-                  }`}>{exp.status}</span>
-                </div>
+          {expenses.map(exp => (
+            <div key={exp._id} className="flex items-center gap-3 bg-card p-3 rounded-xl border border-border">
+              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                <IndianRupee className="w-4 h-4 text-muted-foreground" />
               </div>
-            );
-          })}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{exp.description}</p>
+                <p className="text-[10px] text-muted-foreground">{exp.category} • {getUserName(exp.createdBy)} • {new Date(exp.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-sm font-semibold text-foreground tabular-nums">{formatCurrency(exp.amount)}</p>
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                  exp.status === 'approved' ? 'bg-success/10 text-success' :
+                  exp.status === 'pending' ? 'bg-accent/10 text-accent' :
+                  exp.status === 'flagged' ? 'bg-destructive/10 text-destructive' :
+                  'bg-muted text-muted-foreground'
+                }`}>{exp.status}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
