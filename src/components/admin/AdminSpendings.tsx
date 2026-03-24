@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
+
 import { api } from '../../../convex/_generated/api';
 import { useAuth } from '@/lib/auth-context';
-import { MapPin, Calendar, Clock, CreditCard, Wallet, Smartphone, Layers, Check, X, Download, FileSpreadsheet, FileText, Pencil, Trash2, Save, XCircle } from 'lucide-react';
+import { MapPin, Calendar, Clock, CreditCard, Wallet, Smartphone, Layers, Check, X, Download, FileSpreadsheet, FileText, Pencil, Trash2, Save, XCircle, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 function formatCurrency(n: number) {
@@ -114,7 +115,15 @@ export default function AdminSpendings() {
 
   const getUserByIdFn = (id: string) => allUsers.find(u => u._id === id);
 
-  const expenses = [...allExpenses].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const [selectedTripFilter, setSelectedTripFilter] = useState('all');
+
+  const expenses = useMemo(() => {
+    let list = [...allExpenses];
+    if (selectedTripFilter !== 'all') {
+      list = list.filter(e => e.tripId === selectedTripFilter);
+    }
+    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [allExpenses, selectedTripFilter]);
 
   const handleDownloadCSV = () => {
     const csv = generateCSV(expenses, getUserByIdFn, allTrips);
@@ -209,6 +218,21 @@ export default function AdminSpendings() {
               </>
             )}
           </div>
+          {/* Trip Selection Dropdown */}
+          <div className="relative">
+             <select
+               value={selectedTripFilter}
+               onChange={(e) => setSelectedTripFilter(e.target.value)}
+               className="appearance-none bg-slate-100 border border-slate-200 text-slate-700 font-bold py-2 pl-4 pr-10 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all cursor-pointer text-xs"
+             >
+               <option value="all">All Trips</option>
+               {allTrips.map(t => (
+                 <option key={t._id} value={t._id}>{t.name}</option>
+               ))}
+             </select>
+             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
+          </div>
+
           <div className="bg-slate-100 p-2 rounded-xl shadow-inner border border-slate-200/50 flex items-center gap-2 px-4 text-xs font-bold text-slate-600">
              Total: {expenses.length} Records
           </div>
