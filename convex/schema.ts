@@ -54,6 +54,7 @@ export default defineSchema({
       v.literal("Other")
     ),
     rejectionReason: v.optional(v.string()),
+    manualDate: v.optional(v.string()),
     createdAt: v.string(),
   })
     .index("by_trip", ["tripId"])
