@@ -30,14 +30,19 @@ export default function AddExpensePage() {
   const canSubmit = amount && category;
 
   const handleSubmit = async () => {
-    if (!canSubmit) {
-      if (!category) toast.error('Select a category');
-      if (!amount) toast.error('Enter an amount');
+    // Basic validation
+    if (!amount) { toast.error('Enter an amount'); return; }
+    if (!category) { toast.error('Select a category'); return; }
+    
+    // Sub-category validation: If subcategories exist for this category, one must be selected.
+    const subs = categoriesMap[category] || [];
+    if (subs.length > 0 && !subCategory) {
+      toast.error(`Please select a ${category} sub-category`);
       return;
     }
 
     if (!activeTrip) {
-      toast.error('No active trip found');
+      toast.error('No active trip found. Please check trip status in Admin.');
       return;
     }
 
@@ -49,7 +54,7 @@ export default function AddExpensePage() {
         category: category,
         subCategory: subCategory || undefined,
         paymentMethod,
-        description: description || 'No description provided',
+        description: description.trim() || 'No description provided',
         imageUrl: hasBill ? 'verified' : '/placeholder.svg',
         createdBy: user!._id,
         location: { lat: 30.0869, lng: 78.2676 }, // mock location
@@ -58,8 +63,18 @@ export default function AddExpensePage() {
 
       toast.success('Expense submitted successfully!');
       navigate('/dashboard');
-    } catch (error) {
-      toast.error('Failed to submit expense');
+    } catch (error: any) {
+      console.error("Submission Failure Details:", {
+        error,
+        sentData: {
+          tripId: activeTrip._id,
+          amount,
+          category,
+          subCategory,
+          manualDate
+        }
+      });
+      toast.error(`Submission failed: ${error.message || 'Unknown error'}`);
     }
   };
 
