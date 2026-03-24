@@ -54,12 +54,14 @@ export const create = mutation({
       v.literal("Card"),
       v.literal("Other")
     ),
+    manualDate: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const { manualDate, ...other } = args;
     const expenseId = await ctx.db.insert("expenses", {
-      ...args,
+      ...other,
       status: "pending",
-      createdAt: new Date().toISOString(),
+      createdAt: manualDate || new Date().toISOString(),
     });
 
     // Create audit log
@@ -115,5 +117,40 @@ export const updateStatus = mutation({
       },
       createdAt: new Date().toISOString(),
     });
+  },
+});
+
+// Update expense
+export const update = mutation({
+  args: {
+    id: v.id("expenses"),
+    amount: v.optional(v.number()),
+    category: v.optional(v.string()),
+    subCategory: v.optional(v.string()),
+    description: v.optional(v.string()),
+    paymentMethod: v.optional(v.union(
+      v.literal("Cash"),
+      v.literal("UPI"),
+      v.literal("Card"),
+      v.literal("Other")
+    )),
+    status: v.optional(v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected"),
+      v.literal("flagged")
+    )),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...fields } = args;
+    await ctx.db.patch(id, fields);
+  },
+});
+
+// Delete expense
+export const remove = mutation({
+  args: { id: v.id("expenses") },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
   },
 });

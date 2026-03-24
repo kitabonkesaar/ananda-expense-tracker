@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useAuth } from '@/lib/auth-context';
-import { MapPin, Calendar, Clock, CreditCard, Wallet, Smartphone, Layers, Check, X, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { MapPin, Calendar, Clock, CreditCard, Wallet, Smartphone, Layers, Check, X, Download, FileSpreadsheet, FileText, Pencil, Trash2, Save, XCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 function formatCurrency(n: number) {
   return '₹' + n.toLocaleString('en-IN');
@@ -95,7 +96,21 @@ export default function AdminSpendings() {
   const { allUsers } = useAuth();
   const allExpenses = useQuery(api.expenses.list) ?? [];
   const allTrips = useQuery(api.trips.list) ?? [];
+  const categoriesMap = useQuery(api.categories.getMap) ?? {};
+  
+  const updateExpense = useMutation(api.expenses.update);
+  const removeExpense = useMutation(api.expenses.remove);
+
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [editingExp, setEditingExp] = useState<any | null>(null);
+
+  // Edit form state
+  const [editDesc, setEditDesc] = useState('');
+  const [editAmount, setEditAmount] = useState<number>(0);
+  const [editCategory, setEditCategory] = useState('');
+  const [editSubCategory, setEditSubCategory] = useState('');
+  const [editPayment, setEditPayment] = useState<any>('Cash');
+  const [editStatus, setEditStatus] = useState<any>('pending');
 
   const getUserByIdFn = (id: string) => allUsers.find(u => u._id === id);
 
@@ -113,6 +128,47 @@ export default function AdminSpendings() {
     const timestamp = new Date().toISOString().split('T')[0];
     downloadFile(xml, `expense_ledger_${timestamp}.xls`, 'application/vnd.ms-excel');
     setShowExportMenu(false);
+  };
+
+  const handleStartEdit = (exp: any) => {
+    setEditingExp(exp);
+    setEditDesc(exp.description);
+    setEditAmount(exp.amount);
+    setEditCategory(exp.category);
+    setEditSubCategory(exp.subCategory || '');
+    setEditPayment(exp.paymentMethod || 'Cash');
+    setEditStatus(exp.status);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingExp) return;
+    try {
+      await updateExpense({
+        id: editingExp._id,
+        description: editDesc,
+        amount: Number(editAmount),
+        category: editCategory,
+        subCategory: editSubCategory,
+        paymentMethod: editPayment,
+        status: editStatus,
+      });
+      toast.success('Transaction updated');
+      setEditingExp(null);
+    } catch (err) {
+      toast.error('Failed to update');
+    }
+  };
+
+  const handleDelete = async (id: any) => {
+    if (confirm('Are you sure you want to permanently delete this transaction?')) {
+      try {
+        await removeExpense({ id });
+        toast.success('Transaction deleted');
+      } catch (err) {
+        console.error("Delete error:", err);
+        toast.error('Failed to delete');
+      }
+    }
   };
 
   return (
@@ -269,17 +325,151 @@ export default function AdminSpendings() {
                          </div>
                       </td>
 
-                      {/* Trip */}
-                      <td className="py-4 px-6 text-right">
+                       {/* Trip */}
+                      <td className="py-4 px-6">
                          <span className="inline-block text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full max-w-[150px] truncate" title={trip?.name}>
                             {trip?.name || 'Unknown'}
                          </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-4 px-6 text-right">
+                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => handleStartEdit(exp)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                              title="Edit Record"
+                            >
+                               <Pencil className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(exp._id)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                              title="Delete Record"
+                            >
+                               <Trash2 className="w-4 h-4" />
+                            </button>
+                         </div>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingExp && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setEditingExp(null)} />
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl z-10 overflow-hidden animate-in zoom-in-95 duration-200">
+             <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4 flex items-center justify-between">
+                <h3 className="text-white font-bold flex items-center gap-2 italic tracking-tight">
+                   <Pencil className="w-4 h-4 text-orange-400" /> EDIT TRANSACTION
+                </h3>
+                <button onClick={() => setEditingExp(null)} className="text-slate-400 hover:text-white transition-colors">
+                   <XCircle className="w-6 h-6" />
+                </button>
+             </div>
+             
+             <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="col-span-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Description</label>
+                      <input 
+                        type="text" 
+                        value={editDesc} 
+                        onChange={e => setEditDesc(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300" 
+                      />
+                   </div>
+                   <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Amount (₹)</label>
+                      <input 
+                        type="number" 
+                        value={editAmount} 
+                        onChange={e => setEditAmount(Number(e.target.value))}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300" 
+                      />
+                   </div>
+                   <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Payment</label>
+                      <select 
+                        value={editPayment} 
+                        onChange={e => setEditPayment(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                      >
+                         <option value="Cash">Cash</option>
+                         <option value="UPI">UPI</option>
+                         <option value="Card">Card</option>
+                         <option value="Other">Other</option>
+                      </select>
+                   </div>
+                   <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Category</label>
+                      <select 
+                        value={editCategory} 
+                        onChange={e => {
+                          setEditCategory(e.target.value);
+                          setEditSubCategory('');
+                        }}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                      >
+                         {Object.keys(categoriesMap).map(c => (
+                           <option key={c} value={c}>{c}</option>
+                         ))}
+                      </select>
+                   </div>
+                   <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Subcategory</label>
+                      <select 
+                        value={editSubCategory} 
+                        onChange={e => setEditSubCategory(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                      >
+                         <option value="">None</option>
+                         {(categoriesMap[editCategory] || []).map((s: string) => (
+                           <option key={s} value={s}>{s}</option>
+                         ))}
+                      </select>
+                   </div>
+                   <div className="col-span-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Audit Status</label>
+                       <div className="flex gap-2">
+                          {['pending', 'approved', 'rejected', 'flagged'].map(s => (
+                             <button
+                               key={s}
+                               onClick={() => setEditStatus(s)}
+                               className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border ${
+                                 editStatus === s 
+                                   ? 'bg-slate-800 text-white border-slate-800 shadow-md scale-105' 
+                                   : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+                               }`}
+                             >
+                               {s}
+                             </button>
+                          ))}
+                       </div>
+                   </div>
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                   <button 
+                     onClick={() => setEditingExp(null)}
+                     className="flex-1 py-3 px-4 border border-slate-200 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-50 transition-colors"
+                   >
+                      CANCEL
+                   </button>
+                   <button 
+                     onClick={handleSaveEdit}
+                     className="flex-[2] py-3 px-4 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 transition-transform active:scale-95"
+                   >
+                      <Save className="w-4 h-4" /> SAVE CHANGES
+                   </button>
+                </div>
+             </div>
           </div>
         </div>
       )}

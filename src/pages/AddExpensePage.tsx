@@ -16,6 +16,8 @@ export default function AddExpensePage() {
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'UPI' | 'Card' | 'Other'>('Cash');
   const [description, setDescription] = useState('');
   const [hasBill, setHasBill] = useState(false);
+  const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
+  const [manualTime, setManualTime] = useState(new Date().toTimeString().split(' ')[0].substring(0, 5));
 
   const categoriesMap = useQuery(api.categories.getMap) ?? {};
   const activeTrip = useQuery(api.trips.getActive);
@@ -40,6 +42,7 @@ export default function AddExpensePage() {
     }
 
     try {
+      const combinedDate = new Date(`${manualDate}T${manualTime}`).toISOString();
       await createExpense({
         tripId: activeTrip._id,
         amount: Number(amount),
@@ -50,6 +53,7 @@ export default function AddExpensePage() {
         imageUrl: hasBill ? 'verified' : '/placeholder.svg',
         createdBy: user!._id,
         location: { lat: 30.0869, lng: 78.2676 }, // mock location
+        manualDate: combinedDate,
       });
 
       toast.success('Expense submitted successfully!');
@@ -80,6 +84,28 @@ export default function AddExpensePage() {
           </div>
         </div>
 
+        {/* Date and Time */}
+        <div className="grid grid-cols-2 gap-3">
+           <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Date</label>
+              <input 
+                type="date"
+                value={manualDate}
+                onChange={e => setManualDate(e.target.value)}
+                className="w-full bg-card rounded-xl px-4 py-3 border border-border shadow-sm text-sm font-semibold text-foreground outline-none"
+              />
+           </div>
+           <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Time</label>
+              <input 
+                type="time"
+                value={manualTime}
+                onChange={e => setManualTime(e.target.value)}
+                className="w-full bg-card rounded-xl px-4 py-3 border border-border shadow-sm text-sm font-semibold text-foreground outline-none"
+              />
+           </div>
+        </div>
+
         {/* Category */}
         <div>
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Category *</label>
@@ -101,11 +127,11 @@ export default function AddExpensePage() {
         </div>
 
         {/* Sub Category */}
-        {category && categoriesMap[category] && categoriesMap[category].length > 0 && (
+        {category && categoriesMap[category] && categoriesMap[category].length > 0 ? (
           <div className="animate-fade-up">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Sub Category (Optional)</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Sub Category (Required)</label>
             <div className="flex flex-wrap gap-2">
-              {categoriesMap[category].map(sub => (
+              {categoriesMap[category].map((sub: string) => (
                 <button
                   key={sub}
                   onClick={() => setSubCategory(sub)}
@@ -120,6 +146,12 @@ export default function AddExpensePage() {
               ))}
             </div>
           </div>
+        ) : (
+          category && (
+            <div className="p-3 bg-secondary/50 rounded-xl text-[10px] font-bold text-muted-foreground italic border border-dashed border-border text-center">
+               No subcategories defined for this category.
+            </div>
+          )
         )}
         
         {/* Payment Method */}

@@ -28,14 +28,6 @@ export default function AppHeader() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            value={user.role}
-            onChange={e => switchRole(e.target.value as UserRole)}
-            className="text-xs bg-secondary text-secondary-foreground rounded-md px-2 py-1 border-none outline-none cursor-pointer"
-          >
-            <option value="admin">Admin</option>
-            <option value="staff">Staff</option>
-          </select>
           <button onClick={logout} className="p-2 rounded-lg hover:bg-secondary active:scale-95 transition-all">
             <LogOut className="w-4 h-4 text-muted-foreground" />
           </button>

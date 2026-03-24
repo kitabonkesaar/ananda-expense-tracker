@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { Tags, TrendingUp, Plus, X, Layers, Hash, Fuel, UtensilsCrossed, Building, CircleDollarSign, Bus, PackageOpen, Sparkles, GripVertical } from 'lucide-react';
+import { Tags, TrendingUp, Plus, X, Layers, Hash, Fuel, UtensilsCrossed, Building, CircleDollarSign, Bus, PackageOpen, Sparkles, Pencil, Check } from 'lucide-react';
 
 const CATEGORY_THEME: Record<string, { bg: string; text: string; border: string; light: string; icon: typeof Fuel }> = {
   Fuel:      { bg: 'bg-blue-500',    text: 'text-blue-600',    border: 'border-blue-200', light: 'bg-blue-50',    icon: Fuel },
@@ -28,6 +28,12 @@ export default function AdminCategories() {
   const [newSub, setNewSub] = useState<Record<string, string>>({});
   const [newCat, setNewCat] = useState('');
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
+
+  // Edit states
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editingCatName, setEditingCatName] = useState('');
+  const [editingSub, setEditingSub] = useState<{ catName: string; index: number } | null>(null);
+  const [editingSubName, setEditingSubName] = useState('');
 
   // Build subCategories map from Convex data
   const subCategories: Record<string, string[]> = {};
@@ -75,6 +81,36 @@ export default function AdminCategories() {
     if (!catDoc) return;
     await removeCategory({ id: catDoc._id });
     if (expandedCat === cat) setExpandedCat(null);
+  };
+
+  const handleEditCategory = (id: string, name: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingCatId(id);
+    setEditingCatName(name);
+  };
+
+  const handleSaveCategory = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!editingCatName.trim()) return;
+    await updateCategory({ id: id as any, name: editingCatName.trim() });
+    setEditingCatId(null);
+  };
+
+  const handleEditSub = (cat: string, index: number, name: string) => {
+    setEditingSub({ catName: cat, index });
+    setEditingSubName(name);
+  };
+
+  const handleSaveSub = async (cat: string) => {
+    if (!editingSubName.trim() || !editingSub) return;
+    const catDoc = categoriesRaw.find(c => c.name === cat);
+    if (!catDoc || !catDoc.subCategories) return;
+    
+    const newSubs = [...catDoc.subCategories];
+    newSubs[editingSub.index] = editingSubName.trim();
+    
+    await updateCategory({ id: catDoc._id, subCategories: newSubs });
+    setEditingSub(null);
   };
 
   const getTheme = (cat: string) => CATEGORY_THEME[cat] || DEFAULT_THEME;
@@ -183,6 +219,7 @@ export default function AdminCategories() {
           const subs = subCategories[cat] || [];
           const isExpanded = expandedCat === cat;
           const Icon = theme.icon;
+          const catDoc = categoriesRaw.find(c => c.name === cat);
           const pct = stats && totalSpent > 0 ? ((stats.amount / totalSpent) * 100) : 0;
 
           return (
@@ -197,21 +234,51 @@ export default function AdminCategories() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-xl ${theme.bg} flex items-center justify-center text-white shadow-sm`}>
+                    <div className={`w-11 h-11 rounded-xl ${theme.bg} flex items-center justify-center text-white shadow-sm shrink-0`}>
                       <Icon className="w-5 h-5" />
                     </div>
-                    <div>
-                      <h3 className="text-[15px] font-bold text-slate-800">{cat}</h3>
-                      <p className="text-[11px] font-bold text-slate-400 mt-0.5">{subs.length} subcategories</p>
-                    </div>
+                    {editingCatId === catDoc?._id ? (
+                      <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                        <input 
+                          type="text" 
+                          value={editingCatName}
+                          onChange={e => setEditingCatName(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && handleSaveCategory(catDoc._id, e as any)}
+                          className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-slate-300 w-32"
+                          autoFocus
+                        />
+                        <button onClick={(e) => handleSaveCategory(catDoc._id, e)} className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors">
+                          <Check className="w-4 h-4" strokeWidth={2.5} />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); setEditingCatId(null); }} className="p-1.5 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200 transition-colors">
+                          <X className="w-4 h-4" strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <h3 className="text-[15px] font-bold text-slate-800">{cat}</h3>
+                        <p className="text-[11px] font-bold text-slate-400 mt-0.5">{subs.length} subcategories</p>
+                      </div>
+                    )}
                   </div>
-                  <button
-                    onClick={e => { e.stopPropagation(); handleRemoveCategory(cat); }}
-                    className="p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
-                    title="Delete category"
-                  >
-                    <X className="w-4 h-4" strokeWidth={2.5} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    {catDoc && editingCatId !== catDoc._id && (
+                      <button
+                        onClick={e => handleEditCategory(catDoc._id, cat, e)}
+                        className="p-1.5 rounded-lg text-slate-300 hover:text-amber-500 hover:bg-amber-50 transition-all"
+                        title="Rename category"
+                      >
+                        <Pencil className="w-4 h-4" strokeWidth={2.5} />
+                      </button>
+                    )}
+                    <button
+                      onClick={e => { e.stopPropagation(); handleRemoveCategory(cat); }}
+                      className="p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                      title="Delete category"
+                    >
+                      <X className="w-4 h-4" strokeWidth={2.5} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Stats Row */}
@@ -263,18 +330,49 @@ export default function AdminCategories() {
                   ) : (
                     <div className="space-y-1.5">
                       {subs.map((sub, idx) => (
-                        <div key={sub} className="flex items-center justify-between bg-white rounded-xl px-3.5 py-2.5 border border-slate-100 group hover:border-slate-200 transition-colors">
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-[10px] font-black text-slate-300 w-5 tabular-nums">{idx + 1}.</span>
-                            <Hash className={`w-3 h-3 ${theme.text} opacity-50`} />
-                            <span className="text-[13px] font-bold text-slate-700">{sub}</span>
-                          </div>
-                          <button
-                            onClick={() => handleRemoveSub(cat, sub)}
-                            className="p-1 rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
-                          >
-                            <X className="w-3.5 h-3.5" strokeWidth={2.5} />
-                          </button>
+                        <div key={sub} className="flex items-center border border-slate-100 justify-between bg-white rounded-xl px-3.5 py-2.5 group hover:border-slate-200 transition-colors">
+                          {editingSub?.catName === cat && editingSub?.index === idx ? (
+                             <div className="flex items-center gap-2 w-full">
+                               <input 
+                                 type="text" 
+                                 value={editingSubName}
+                                 onChange={e => setEditingSubName(e.target.value)}
+                                 onKeyDown={e => e.key === 'Enter' && handleSaveSub(cat)}
+                                 className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-slate-300"
+                                 autoFocus
+                               />
+                               <button onClick={() => handleSaveSub(cat)} className="p-1 bg-emerald-100 text-emerald-600 rounded-md hover:bg-emerald-200 transition-colors shrink-0">
+                                 <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
+                               </button>
+                               <button onClick={() => setEditingSub(null)} className="p-1 bg-slate-100 text-slate-500 rounded-md hover:bg-slate-200 transition-colors shrink-0">
+                                 <X className="w-3.5 h-3.5" strokeWidth={2.5} />
+                               </button>
+                             </div>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2.5">
+                                <span className="text-[10px] font-black text-slate-300 w-5 tabular-nums">{idx + 1}.</span>
+                                <Hash className={`w-3 h-3 ${theme.text} opacity-50 shrink-0`} />
+                                <span className="text-[13px] font-bold text-slate-700 truncate max-w-[150px]">{sub}</span>
+                              </div>
+                              <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => handleEditSub(cat, idx, sub)}
+                                  className="p-1 rounded-md text-slate-300 hover:text-amber-500 hover:bg-amber-50 transition-all"
+                                  title="Edit subcategory"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" strokeWidth={2.5} />
+                                </button>
+                                <button
+                                  onClick={() => handleRemoveSub(cat, sub)}
+                                  className="p-1 rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                                  title="Delete subcategory"
+                                >
+                                  <X className="w-3.5 h-3.5" strokeWidth={2.5} />
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>

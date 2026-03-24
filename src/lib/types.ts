@@ -5,7 +5,9 @@ export type UserRole = 'admin' | 'staff';
 export interface User {
   _id: Id<"users">;
   name: string;
-  phone: string;
+  phone?: string;
+  email?: string;
+  picture?: string;
   role: UserRole;
   isActive: boolean;
   createdAt: string;

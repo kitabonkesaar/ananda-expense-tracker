@@ -36,13 +36,16 @@ export default function AdminPanelPage() {
       
       {/* Left Sidebar */}
       <aside className="w-[250px] bg-white border-r border-slate-200 flex flex-col shrink-0">
-        {/* Logo Area */}
         <div className="h-[72px] flex items-center justify-between px-6 border-b border-transparent">
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 cursor-pointer" onClick={() => navigate('/settings')}>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 cursor-pointer" onClick={() => navigate('/dashboard')}>
             budget<span className="text-orange-500">Guard</span>
           </h1>
-          <button className="p-1 rounded bg-slate-100 text-slate-500 hover:bg-slate-200">
-            <ArrowLeft className="w-4 h-4" />
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-all active:scale-95"
+            title="Back to User App"
+          >
+            <ArrowLeft className="w-4 h-4" strokeWidth={2.5} />
           </button>
         </div>
 
@@ -95,39 +98,22 @@ export default function AdminPanelPage() {
             />
           </div>
 
-          {/* Right Icons & Profile */}
+          {/* Right Icons & Profile removed, keeping only Profile */}
           <div className="flex items-center gap-5">
-            <div className="flex items-center gap-3 pr-5 border-r border-slate-200">
-              <button className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
-                <span className="w-5 h-5 flex items-center justify-center font-bold text-sm">EN</span>
-              </button>
-              <button className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
-                <Moon className="w-5 h-5" />
-              </button>
-              <button className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full ring-2 ring-white"></span>
-              </button>
-              <button className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors relative">
-                <MessageSquare className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full ring-2 ring-white"></span>
-              </button>
-              <button className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors hidden md:block">
-                <Maximize className="w-5 h-5" />
-              </button>
-              <button className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors hidden md:block">
-                <Grid className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Profile Dropdown */}
             <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold overflow-hidden shadow-sm">
-                 <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Kristin" alt="Profile" className="w-full h-full object-cover" />
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold overflow-hidden shadow-sm border-2 border-white/50">
+                 <img src={user.picture || `https://api.dicebear.com/7.x/notionists/svg?seed=${user.name}`} alt="Profile" className="w-full h-full object-cover" />
               </div>
               <div className="hidden sm:block text-sm">
                 <p className="font-bold text-slate-800 leading-tight">{user.name}</p>
-                <p className="text-slate-500 text-xs">Sale Administrator</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                   <span className="text-orange-500 text-[10px] font-black uppercase tracking-widest bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
+                      {user.role}
+                   </span>
+                   {user.email && (
+                      <span className="text-slate-400 text-xs font-semibold">{user.email}</span>
+                   )}
+                </div>
               </div>
             </div>
           </div>
