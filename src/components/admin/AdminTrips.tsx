@@ -55,8 +55,18 @@ export default function AdminTrips() {
     setEditingTripId(null);
   };
 
-  const allocatedTotal = Object.values(categoryBudgets).reduce((sum, v) => sum + (Number(v) || 0), 0);
-  const budgetNum = Number(totalBudget) || 0;
+  const parseBudgetVal = (val: string | number | undefined): number => {
+    if (val === undefined || val === '') return 0;
+    const n = Number(String(val).trim());
+    return isNaN(n) ? 0 : n;
+  };
+
+  // Only sum up categories that are currently in the active 'categories' list
+  const allocatedTotal = categories.reduce((sum, cat) => {
+    return sum + parseBudgetVal(categoryBudgets[cat]);
+  }, 0);
+  
+  const budgetNum = parseBudgetVal(totalBudget);
   const unallocated = budgetNum - allocatedTotal;
 
   const handleSubmit = async () => {
