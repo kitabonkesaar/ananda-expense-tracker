@@ -80,12 +80,71 @@ const App = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      const wasShown = localStorage.getItem('pwaBannerShown');
+      if (!wasShown) {
+        setShowInstallBanner(true);
+      }
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    }
+    setDeferredPrompt(null);
+    setShowInstallBanner(false);
+    localStorage.setItem('pwaBannerShown', 'true');
+  };
+
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"}>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           {showSplash && <SplashScreen />}
           <Sonner />
+          
+          {/* One-time PWA Install Banner */}
+          {showInstallBanner && (
+            <div className="fixed top-4 left-4 right-4 z-[60] bg-[#128c7e] text-white p-4 rounded-2xl shadow-2xl animate-fade-up border border-white/20 flex items-center justify-between gap-4">
+               <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                     <span className="font-black italic text-sm">BG</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold leading-tight">Install Budget Guard</h4>
+                    <p className="text-[10px] opacity-80 font-medium">Add to home screen for faster access</p>
+                  </div>
+               </div>
+               <div className="flex gap-2">
+                  <button 
+                    onClick={() => { setShowInstallBanner(false); localStorage.setItem('pwaBannerShown', 'true'); }}
+                    className="text-[10px] font-bold px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    Not now
+                  </button>
+                  <button 
+                    onClick={handleInstallClick}
+                    className="text-[10px] font-black bg-white text-[#128c7e] px-4 py-2 rounded-lg shadow-sm active:scale-95 transition-all"
+                  >
+                    Install
+                  </button>
+               </div>
+            </div>
+          )}
+
           <AuthProvider>
             <BrowserRouter>
               <AppRoutes />
