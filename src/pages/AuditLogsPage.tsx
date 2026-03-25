@@ -5,6 +5,7 @@ import { FileText, UserCircle, ArrowRight } from 'lucide-react';
 
 const actionLabels: Record<string, { label: string; color: string }> = {
   expense_created: { label: 'Expense Created', color: 'bg-primary/10 text-primary' },
+  expense_updated: { label: 'Expense Updated', color: 'bg-indigo-100 text-indigo-600' },
   expense_approved: { label: 'Expense Approved', color: 'bg-success/10 text-success' },
   expense_rejected: { label: 'Expense Rejected', color: 'bg-destructive/10 text-destructive' },
   expense_flagged: { label: 'Expense Flagged', color: 'bg-warning/10 text-warning' },

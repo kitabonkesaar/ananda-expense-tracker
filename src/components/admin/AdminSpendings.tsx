@@ -176,6 +176,7 @@ export default function AdminSpendings() {
         subCategory: editSubCategory,
         paymentMethod: editPayment,
         status: editStatus,
+        userId: user!._id,
       });
       toast.success('Transaction updated');
       setEditingExp(null);

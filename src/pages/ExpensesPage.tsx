@@ -6,8 +6,20 @@ import { api } from '../../convex/_generated/api';
 import {
   Receipt, Tags, IndianRupee, Filter, ListFilter, Search,
   Wallet, Smartphone, CreditCard, Check, X, AlertTriangle, Clock,
+  Pencil, Save, XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 function formatCurrency(n: number) {
   return '₹' + n.toLocaleString('en-IN');
@@ -30,11 +42,21 @@ export default function ExpensesPage() {
   const { user, allUsers } = useAuth();
   const allExpenses = useQuery(api.expenses.list) ?? [];
   const allTrips = useQuery(api.trips.list) ?? [];
+  const categoriesMap = useQuery(api.categories.getMap) ?? {};
   const updateStatus = useMutation(api.expenses.updateStatus);
+  const updateExpense = useMutation(api.expenses.update);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedTrip, setSelectedTrip] = useState('All');
+
+  // Edit states
+  const [editingExp, setEditingExp] = useState<any | null>(null);
+  const [editDesc, setEditDesc] = useState('');
+  const [editAmount, setEditAmount] = useState<string>('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editSubCategory, setEditSubCategory] = useState('');
+  const [editPayment, setEditPayment] = useState<string>('Cash');
 
   const getUserName = (id: string) => allUsers.find(u => u._id === id)?.name ?? 'Unknown';
   const getTripName = (id: string) => allTrips.find(t => t._id === id)?.name ?? 'Unknown Trip';
@@ -70,6 +92,34 @@ export default function ExpensesPage() {
       toast.success(`Expense ${newStatus}`);
     } catch {
       toast.error('Failed to update status');
+    }
+  };
+
+  const handleStartEdit = (exp: any) => {
+    setEditingExp(exp);
+    setEditDesc(exp.description);
+    setEditAmount(exp.amount.toString());
+    setEditCategory(exp.category);
+    setEditSubCategory(exp.subCategory || '');
+    setEditPayment(exp.paymentMethod || 'Cash');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingExp || !user) return;
+    try {
+      await updateExpense({
+        id: editingExp._id,
+        description: editDesc,
+        amount: Number(editAmount),
+        category: editCategory,
+        subCategory: editSubCategory || undefined,
+        paymentMethod: editPayment as any,
+        userId: user._id,
+      });
+      toast.success('Expense updated');
+      setEditingExp(null);
+    } catch (err: any) {
+      toast.error(`Update failed: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -225,8 +275,16 @@ export default function ExpensesPage() {
                   </div>
                 )}
                 {exp.status === 'pending' && exp.createdBy === user?._id && (
-                  <div className="flex items-center gap-1.5 text-[10px] text-accent font-semibold">
-                    <Clock className="w-3 h-3" /> Awaiting admin approval
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-1.5 text-[10px] text-accent font-semibold">
+                      <Clock className="w-3 h-3" /> Awaiting admin approval
+                    </div>
+                    <button
+                      onClick={() => handleStartEdit(exp)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider hover:bg-primary/20 active:scale-95 transition-all"
+                    >
+                      <Pencil className="w-3 h-3" /> Edit Entry
+                    </button>
                   </div>
                 )}
               </div>
@@ -234,6 +292,123 @@ export default function ExpensesPage() {
           })
         )}
       </div>
+
+      {/* Edit Modal */}
+      <Dialog open={!!editingExp} onOpenChange={(open) => !open && setEditingExp(null)}>
+        <DialogContent className="max-w-[95vw] sm:max-w-md bg-card border-border rounded-2xl overflow-hidden p-0 gap-0">
+          <DialogHeader className="p-5 border-b border-border">
+            <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
+              <Pencil className="w-4 h-4 text-primary" /> Edit Expense
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+            {/* Amount */}
+            <div>
+              <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1.5">Amount *</Label>
+              <div className="flex items-center gap-2 bg-secondary/50 rounded-xl px-4 py-2 border border-border">
+                <IndianRupee className="w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="number"
+                  value={editAmount}
+                  onChange={e => setEditAmount(e.target.value)}
+                  className="bg-transparent border-none text-lg font-bold p-0 h-auto focus-visible:ring-0 shadow-none tabular-nums"
+                />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1.5">Description</Label>
+              <Textarea
+                placeholder="Brief description..."
+                value={editDesc}
+                onChange={e => setEditDesc(e.target.value)}
+                rows={2}
+                className="bg-secondary/50 border-border rounded-xl text-sm focus-visible:ring-primary/20 resize-none"
+              />
+            </div>
+
+            {/* Category */}
+            <div>
+              <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1.5">Category *</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {Object.keys(categoriesMap).map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => { setEditCategory(cat); setEditSubCategory(''); }}
+                    className={`py-2 rounded-lg text-xs font-bold transition-all border ${
+                      editCategory === cat
+                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                        : 'bg-secondary/50 border-border text-muted-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Subcategory */}
+            {editCategory && categoriesMap[editCategory]?.length > 0 && (
+              <div>
+                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1.5">Subcategory</Label>
+                <div className="flex flex-wrap gap-2">
+                  {categoriesMap[editCategory].map((sub: string) => (
+                    <button
+                      key={sub}
+                      onClick={() => setEditSubCategory(sub)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                        editSubCategory === sub
+                          ? 'bg-primary/10 border-primary text-primary shadow-sm'
+                          : 'bg-secondary/50 border-border text-muted-foreground hover:bg-secondary'
+                      }`}
+                    >
+                      {sub}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Payment Method */}
+            <div>
+              <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-1.5">Payment Method</Label>
+              <div className="grid grid-cols-4 gap-2">
+                {['Cash', 'UPI', 'Card', 'Other'].map(method => (
+                  <button
+                    key={method}
+                    onClick={() => setEditPayment(method)}
+                    className={`py-2 rounded-lg text-[10px] font-black transition-all border ${
+                      editPayment === method
+                        ? 'bg-primary/10 border-primary text-primary shadow-sm'
+                        : 'bg-secondary/50 border-border text-muted-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    {method}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="p-5 border-t border-border flex flex-row gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setEditingExp(null)}
+              className="flex-1 rounded-xl border-border font-bold text-xs"
+            >
+              <XCircle className="w-4 h-4 mr-2" /> CANCEL
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              className="flex-[2] rounded-xl font-bold text-xs bg-primary hover:bg-primary/90"
+            >
+              <Save className="w-4 h-4 mr-2" /> SAVE CHANGES
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

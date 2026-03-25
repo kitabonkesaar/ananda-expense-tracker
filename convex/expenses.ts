@@ -140,10 +140,34 @@ export const update = mutation({
       v.literal("rejected"),
       v.literal("flagged")
     )),
+    userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    const { id, ...fields } = args;
-    await ctx.db.patch(id, fields);
+    const { id, userId, ...fields } = args;
+    const existing = await ctx.db.get(id);
+    if (!existing) throw new Error("Expense not found");
+
+    const changes: Record<string, any> = {};
+    for (const [key, value] of Object.entries(fields)) {
+      if ((existing as any)[key] !== value) {
+        changes[key] = { from: (existing as any)[key], to: value };
+      }
+    }
+
+    if (Object.keys(changes).length > 0) {
+      await ctx.db.patch(id, { ...fields, status: "pending" }); // Reset to pending if edited
+
+      await ctx.db.insert("audit_logs", {
+        action: "expense_updated",
+        userId,
+        metadata: {
+          expenseId: id,
+          changes,
+          description: existing.description
+        },
+        createdAt: new Date().toISOString(),
+      });
+    }
   },
 });
 
