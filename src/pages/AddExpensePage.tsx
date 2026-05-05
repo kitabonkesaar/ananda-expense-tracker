@@ -27,19 +27,11 @@ export default function AddExpensePage() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const canSubmit = amount && category;
+  const canSubmit = !!amount;
 
   const handleSubmit = async () => {
     // Basic validation
     if (!amount) { toast.error('Enter an amount'); return; }
-    if (!category) { toast.error('Select a category'); return; }
-    
-    // Sub-category validation: If subcategories exist for this category, one must be selected.
-    const subs = categoriesMap[category] || [];
-    if (subs.length > 0 && !subCategory) {
-      toast.error(`Please select a ${category} sub-category`);
-      return;
-    }
 
     if (!activeTrip) {
       toast.error('No active trip found. Please check trip status in Admin.');
@@ -123,12 +115,12 @@ export default function AddExpensePage() {
 
         {/* Category */}
         <div>
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Category *</label>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Category <span className="text-[10px] normal-case font-normal text-muted-foreground/60">(Optional)</span></label>
           <div className="grid grid-cols-3 gap-2">
             {Object.keys(categoriesMap).map(cat => (
               <button
                 key={cat}
-                onClick={() => { setCategory(cat); setSubCategory(''); }}
+                onClick={() => { setCategory(cat === category ? '' : cat); setSubCategory(''); }}
                 className={`py-2.5 px-1 rounded-xl text-sm font-medium transition-all active:scale-95 ${
                   category === cat
                     ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
@@ -139,12 +131,18 @@ export default function AddExpensePage() {
               </button>
             ))}
           </div>
+          {category && (
+            <button onClick={() => { setCategory(''); setSubCategory(''); }} className="mt-1.5 text-[10px] font-bold text-muted-foreground hover:text-destructive transition-colors">✕ Clear selection</button>
+          )}
         </div>
 
         {/* Sub Category */}
         {category && categoriesMap[category] && categoriesMap[category].length > 0 ? (
           <div className="animate-fade-up">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Sub Category (Required)</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sub Category <span className="text-[10px] normal-case font-normal text-muted-foreground/60">(Optional)</span></label>
+              {subCategory && <button onClick={() => setSubCategory('')} className="text-[10px] font-bold text-muted-foreground hover:text-destructive transition-colors">✕ Clear</button>}
+            </div>
             <div className="flex flex-wrap gap-2">
               {categoriesMap[category].map((sub: string) => (
                 <button
