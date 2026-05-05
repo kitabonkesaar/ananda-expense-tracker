@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { Tags, TrendingUp, Plus, X, Layers, Hash, Fuel, UtensilsCrossed, Building, CircleDollarSign, Bus, PackageOpen, Sparkles, Pencil, Check } from 'lucide-react';
+import { Tags, TrendingUp, Plus, X, Layers, Hash, Fuel, UtensilsCrossed, Building, CircleDollarSign, Bus, PackageOpen, Sparkles, Pencil, Check, Map, ChevronDown } from 'lucide-react';
 
 const CATEGORY_THEME: Record<string, { bg: string; text: string; border: string; light: string; icon: typeof Fuel }> = {
   Fuel:      { bg: 'bg-blue-500',    text: 'text-blue-600',    border: 'border-blue-200', light: 'bg-blue-50',    icon: Fuel },
@@ -21,9 +21,11 @@ function formatCurrency(n: number) {
 export default function AdminCategories() {
   const categoriesRaw = useQuery(api.categories.list) ?? [];
   const allExpenses = useQuery(api.expenses.list) ?? [];
+  const allTrips = useQuery(api.trips.list) ?? [];
   const createCategory = useMutation(api.categories.create);
   const updateCategory = useMutation(api.categories.update);
   const removeCategory = useMutation(api.categories.remove);
+  const [selectedTripId, setSelectedTripId] = useState<string>('all');
 
   const [newSub, setNewSub] = useState<Record<string, string>>({});
   const [newCat, setNewCat] = useState('');
@@ -39,7 +41,10 @@ export default function AdminCategories() {
   const subCategories: Record<string, string[]> = {};
   categoriesRaw.forEach(c => { subCategories[c.name] = c.subCategories || []; });
 
-  const expenses = allExpenses;
+  const expenses = useMemo(
+    () => selectedTripId === 'all' ? allExpenses : allExpenses.filter(e => e.tripId === selectedTripId),
+    [allExpenses, selectedTripId]
+  );
 
   const categoryStats = useMemo(() => {
     const map: Record<string, { amount: number; count: number }> = {};
@@ -50,6 +55,22 @@ export default function AdminCategories() {
     });
     return map;
   }, [expenses]);
+
+  // Per-trip breakdown for each category
+  const tripCategoryStats = useMemo(() => {
+    // map: category -> tripId -> { amount, count }
+    const map: Record<string, Record<string, { amount: number; count: number; tripName: string }>> = {};
+    allExpenses.filter(e => e.status !== 'rejected').forEach(e => {
+      if (!map[e.category]) map[e.category] = {};
+      if (!map[e.category][e.tripId]) {
+        const trip = allTrips.find(t => t._id === e.tripId);
+        map[e.category][e.tripId] = { amount: 0, count: 0, tripName: trip?.name || 'Unknown Trip' };
+      }
+      map[e.category][e.tripId].amount += e.amount;
+      map[e.category][e.tripId].count++;
+    });
+    return map;
+  }, [allExpenses, allTrips]);
 
   const totalSpent = Object.values(categoryStats).reduce((s, v) => s + v.amount, 0);
   const allCategories = Object.keys(subCategories);
@@ -138,7 +159,20 @@ export default function AdminCategories() {
           <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-orange-400" /> Spending Distribution
           </h3>
-          <span className="text-xs font-bold text-slate-400">Total: <span className="text-slate-700">{formatCurrency(totalSpent)}</span></span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold text-slate-400">Total: <span className="text-slate-700">{formatCurrency(totalSpent)}</span></span>
+            <div className="relative">
+              <select
+                value={selectedTripId}
+                onChange={e => setSelectedTripId(e.target.value)}
+                className="appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold py-1.5 pl-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 cursor-pointer"
+              >
+                <option value="all">All Trips</option>
+                {allTrips.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+              </select>
+              <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2 top-2.5 pointer-events-none" />
+            </div>
+          </div>
         </div>
 
         {/* Stacked bar */}
@@ -317,9 +351,47 @@ export default function AdminCategories() {
                 )}
               </div>
 
-              {/* Expanded: Subcategory Management */}
+              {/* Expanded: Trip-wise breakdown + Subcategory Management */}
               {isExpanded && (
-                <div className="border-t border-slate-100 bg-slate-50/50 px-5 py-4 space-y-3">
+                <div className="border-t border-slate-100 bg-slate-50/50 px-5 py-4 space-y-4">
+
+                  {/* Trip-wise spending for this category */}
+                  {(() => {
+                    const tripBreakdown = tripCategoryStats[cat];
+                    if (!tripBreakdown || Object.keys(tripBreakdown).length === 0) return null;
+                    const entries = Object.entries(tripBreakdown).sort((a, b) => b[1].amount - a[1].amount);
+                    const catTotal = entries.reduce((s, [, v]) => s + v.amount, 0);
+                    return (
+                      <div>
+                        <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                          <Map className="w-3.5 h-3.5 text-slate-400" /> Trip-wise Spending
+                        </h4>
+                        <div className="space-y-2">
+                          {entries.map(([tripId, data]) => {
+                            const pctTrip = catTotal > 0 ? (data.amount / catTotal) * 100 : 0;
+                            return (
+                              <div key={tripId}>
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="text-[11px] font-bold text-slate-600 truncate max-w-[160px]" title={data.tripName}>{data.tripName}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold text-slate-400">{data.count} entries</span>
+                                    <span className="text-[12px] font-black text-slate-700 tabular-nums">{formatCurrency(data.amount)}</span>
+                                  </div>
+                                </div>
+                                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${theme.bg} transition-all duration-700`}
+                                    style={{ width: `${Math.min(pctTrip, 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
                     <Layers className="w-3.5 h-3.5 text-slate-400" /> Subcategories
                   </h4>
