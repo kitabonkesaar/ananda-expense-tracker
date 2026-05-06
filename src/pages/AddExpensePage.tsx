@@ -19,8 +19,8 @@ export default function AddExpensePage() {
   const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
   const [manualTime, setManualTime] = useState(new Date().toTimeString().split(' ')[0].substring(0, 5));
 
-  const categoriesMap = useQuery(api.categories.getMap) ?? {};
   const activeTrip = useQuery(api.trips.getActive);
+  const categoriesMap = useQuery(api.categories.getMap, activeTrip ? { tripId: activeTrip._id } : "skip") ?? {};
   const createExpense = useMutation(api.expenses.create);
 
   if (user?.role !== 'staff' && user?.role !== 'admin') {

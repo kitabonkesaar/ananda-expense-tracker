@@ -93,7 +93,10 @@ export default defineSchema({
   }).index("by_user", ["userId"]),
 
   categories: defineTable({
+    tripId: v.optional(v.id("trips")),
     name: v.string(),
     subCategories: v.array(v.string()),
-  }).index("by_name", ["name"]),
+  })
+    .index("by_name", ["name"])
+    .index("by_trip", ["tripId"]),
 });

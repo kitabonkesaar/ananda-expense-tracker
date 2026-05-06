@@ -1,17 +1,26 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-// Get all categories
+// Get all categories (optionally for a specific trip)
 export const list = query({
-  handler: async (ctx) => {
-    return await ctx.db.query("categories").collect();
+  args: { tripId: v.optional(v.id("trips")) },
+  handler: async (ctx, args) => {
+    let cats = await ctx.db.query("categories").collect();
+    if (args.tripId) {
+      cats = cats.filter(c => !c.tripId || c.tripId === args.tripId);
+    }
+    return cats;
   },
 });
 
 // Get categories as a map (name -> subCategories)
 export const getMap = query({
-  handler: async (ctx) => {
-    const cats = await ctx.db.query("categories").collect();
+  args: { tripId: v.optional(v.id("trips")) },
+  handler: async (ctx, args) => {
+    let cats = await ctx.db.query("categories").collect();
+    if (args.tripId) {
+      cats = cats.filter(c => !c.tripId || c.tripId === args.tripId);
+    }
     const result: Record<string, string[]> = {};
     for (const cat of cats) {
       result[cat.name] = cat.subCategories;
@@ -23,15 +32,19 @@ export const getMap = query({
 // Create category
 export const create = mutation({
   args: {
+    tripId: v.optional(v.id("trips")),
     name: v.string(),
     subCategories: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    // Check if category already exists
-    const existing = await ctx.db
+    // Check if category already exists for this trip
+    const allExisting = await ctx.db
       .query("categories")
       .withIndex("by_name", (q) => q.eq("name", args.name))
-      .first();
+      .collect();
+      
+    const existing = allExisting.find(c => c.tripId === args.tripId || !c.tripId);
+    
     if (existing) {
       throw new Error(`Category "${args.name}" already exists`);
     }

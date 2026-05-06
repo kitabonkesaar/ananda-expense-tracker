@@ -42,7 +42,8 @@ export default function ExpensesPage() {
   const { user, allUsers } = useAuth();
   const allExpenses = useQuery(api.expenses.list) ?? [];
   const allTrips = useQuery(api.trips.list) ?? [];
-  const categoriesMap = useQuery(api.categories.getMap) ?? {};
+  const [editingExp, setEditingExp] = useState<any | null>(null);
+  const categoriesMap = useQuery(api.categories.getMap, editingExp ? { tripId: editingExp.tripId } : {}) ?? {};
   const updateStatus = useMutation(api.expenses.updateStatus);
   const updateExpense = useMutation(api.expenses.update);
 
@@ -51,7 +52,6 @@ export default function ExpensesPage() {
   const [selectedTrip, setSelectedTrip] = useState('All');
 
   // Edit states
-  const [editingExp, setEditingExp] = useState<any | null>(null);
   const [editDesc, setEditDesc] = useState('');
   const [editAmount, setEditAmount] = useState<string>('');
   const [editCategory, setEditCategory] = useState('');

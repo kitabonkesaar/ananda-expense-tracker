@@ -19,13 +19,13 @@ function formatCurrency(n: number) {
 }
 
 export default function AdminCategories() {
-  const categoriesRaw = useQuery(api.categories.list) ?? [];
+  const [selectedTripId, setSelectedTripId] = useState<string>('all');
+  const categoriesRaw = useQuery(api.categories.list, selectedTripId === 'all' ? {} : { tripId: selectedTripId as any }) ?? [];
   const allExpenses = useQuery(api.expenses.list) ?? [];
   const allTrips = useQuery(api.trips.list) ?? [];
   const createCategory = useMutation(api.categories.create);
   const updateCategory = useMutation(api.categories.update);
   const removeCategory = useMutation(api.categories.remove);
-  const [selectedTripId, setSelectedTripId] = useState<string>('all');
 
   const [newSub, setNewSub] = useState<Record<string, string>>({});
   const [newCat, setNewCat] = useState('');
@@ -92,9 +92,18 @@ export default function AdminCategories() {
   const handleAddCategory = async () => {
     if (!newCat.trim()) return;
     const catName = newCat.trim();
-    if (subCategories[catName]) return;
-    await createCategory({ name: catName, subCategories: [] });
+    if (subCategories[catName]) {
+      toast.error('Category already exists');
+      return;
+    }
+    
+    await createCategory({ 
+      name: catName, 
+      subCategories: [],
+      ...(selectedTripId !== 'all' ? { tripId: selectedTripId as any } : {})
+    });
     setNewCat('');
+    toast.success(`Category created ${selectedTripId !== 'all' ? 'for this trip' : 'globally'}`);
   };
 
   const handleRemoveCategory = async (cat: string) => {
@@ -243,6 +252,9 @@ export default function AdminCategories() {
             </button>
           </div>
         </div>
+        {selectedTripId === 'all' && (
+           <p className="text-[10px] text-amber-600 font-bold mt-3">Note: Creating a category while "All Trips" is selected will make it available globally for all trips.</p>
+        )}
       </div>
 
       {/* ========== CATEGORY CARDS GRID ========== */}

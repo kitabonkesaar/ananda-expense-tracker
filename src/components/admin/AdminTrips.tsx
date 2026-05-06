@@ -22,14 +22,14 @@ export default function AdminTrips() {
   const { user, allUsers } = useAuth();
   const trips = useQuery(api.trips.list) ?? [];
   const allExpenses = useQuery(api.expenses.list) ?? [];
-  const categoriesRaw = useQuery(api.categories.list) ?? [];
+  const [editingTripId, setEditingTripId] = useState<Id<"trips"> | null>(null);
+  const categoriesRaw = useQuery(api.categories.list, editingTripId ? { tripId: editingTripId } : {}) ?? [];
   const createTrip = useMutation(api.trips.create);
   const removeTrip = useMutation(api.trips.remove);
   const updateTrip = useMutation(api.trips.update);
 
   const [showForm, setShowForm] = useState(false);
   const [expandedTrip, setExpandedTrip] = useState<string | null>(null);
-  const [editingTripId, setEditingTripId] = useState<Id<"trips"> | null>(null);
 
   // Form state
   const [name, setName] = useState('');
